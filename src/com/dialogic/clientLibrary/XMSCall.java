@@ -33,9 +33,9 @@ public abstract class XMSCall {
     private XMSCallType m_calltype = XMSCallType.UNKNOWN;
     private String m_connectionaddress = null;
     private String m_calledaddress = null;
-//    public XMSMakecallOptions MakecallOptions = new XMSMakecallOptions();
+    public XMSMakecallOptions MakecallOptions = new XMSMakecallOptions();
 //    public XMSUpdatecallOptions UpdatecallOptions = new XMSUpdatecallOptions();
-//    public XMSWaitcallOptions WaitcallOptions = new XMSWaitcallOptions();
+    public XMSWaitcallOptions WaitcallOptions = new XMSWaitcallOptions();
 //    public XMSAnswercallOptions AnswercallOptions = WaitcallOptions;
 //    public XMSAcceptcallOptions AcceptcallOptions = new XMSAcceptcallOptions();
 //    //public XMSAnswercallOptions AnswercallOptions = new XMSAnswercallOptions();  
@@ -132,9 +132,8 @@ public abstract class XMSCall {
     protected XMSCallState setState(XMSCallState a_newState) {
 //        FunctionLogger logger = new FunctionLogger("setState", this, m_logger);
 //        logger.info("Setting state to " + a_newState + " (previous state = " + m_state + ")");
-//        m_state = a_newState;
-//        return m_state;
-        return null;
+        m_state = a_newState;
+        return m_state;
     }
 
     public XMSReturnCode makeCall(String dest) {

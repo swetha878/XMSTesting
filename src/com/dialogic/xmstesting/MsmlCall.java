@@ -69,7 +69,6 @@ public class MsmlCall extends XMSCall implements Observer {
                 }
                 isBlocked = false;
             }
-
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
         }
@@ -96,8 +95,12 @@ public class MsmlCall extends XMSCall implements Observer {
                 msmlSip.setFromAddress(Inet4Address.getLocalHost().getHostAddress());
                 if (caller != null) {
                     msmlSip.setLocalSdp(caller.getRemoteSdp());
-                } else {
+                }
+                if (!MakecallOptions.m_ACKOn200Enabled) {
                     msmlSip.setACKOn200(Boolean.FALSE);
+                }
+                if (!MakecallOptions.m_OKOnInfoEnabled) {
+                    msmlSip.setOKOnInfo(Boolean.FALSE);
                 }
                 msmlSip.createInviteRequest(msmlSip.getToUser(), msmlSip.getToAddress());
 
@@ -125,16 +128,40 @@ public class MsmlCall extends XMSCall implements Observer {
 
     @Override
     public XMSReturnCode acceptCall() {
-        if (caller != null) {
-            caller.createRingingResponse(caller.getInviteRequest());
+        try {
+            if (caller != null) {
+                caller.createRingingResponse(caller.getInviteRequest());
+                if (!WaitcallOptions.m_autoConnectEnabled) {
+                    synchronized (m_synclock) {
+                        while (!isBlocked) {
+                            m_synclock.wait();
+                        }
+                        isBlocked = false;
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
         }
         return XMSReturnCode.SUCCESS;
     }
 
     @Override
     public XMSReturnCode answerCall() {
-        if (caller != null) {
-            caller.createInviteOk(caller.getInviteRequest());
+        try {
+            if (caller != null) {
+                caller.createInviteOk(caller.getInviteRequest());
+                if (!WaitcallOptions.m_autoConnectEnabled) {
+                    synchronized (m_synclock) {
+                        while (!isBlocked) {
+                            m_synclock.wait();
+                        }
+                        isBlocked = false;
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
         }
         return XMSReturnCode.SUCCESS;
     }
@@ -163,7 +190,7 @@ public class MsmlCall extends XMSCall implements Observer {
     public XMSReturnCode play(String filename) {
         try {
             if (msmlSip != null && filename != null) {
-                msmlSip.createInfoRequest(buildPlayMsml(filename));
+                msmlSip.sendInfo(buildPlayMsml(filename));
                 m_state = XMSCallState.PLAY;
                 synchronized (m_synclock) {
                     while (!isBlocked) {
@@ -194,7 +221,7 @@ public class MsmlCall extends XMSCall implements Observer {
     public XMSReturnCode record(String filename) {
         try {
             if (msmlSip != null && filename != null) {
-                msmlSip.createInfoRequest(buildRecordMsml(filename, 10));
+                msmlSip.sendInfo(buildRecordMsml(filename, 10));
                 m_state = XMSCallState.RECORD;
                 synchronized (m_synclock) {
                     while (!isBlocked) {
@@ -248,12 +275,27 @@ public class MsmlCall extends XMSCall implements Observer {
             }
         } else if (e.getType().equals(EventType.RINGING)) {
             if (this.callMode == CallMode.INBOUND) {
-                acceptCall();
+                if (WaitcallOptions.m_autoConnectEnabled) {
+                    acceptCall();
+                } else {
+                    synchronized (m_synclock) {
+                        isBlocked = true;
+                        m_synclock.notifyAll();
+                    }
+                }
+
             } else if (this.callMode == CallMode.OUTBOUND) {
             }
         } else if (e.getType().equals(EventType.CONNECTING)) {
             if (this.callMode == CallMode.INBOUND) {
-                answerCall();
+                if (WaitcallOptions.m_autoConnectEnabled) {
+                    answerCall();
+                } else {
+                    synchronized (m_synclock) {
+                        isBlocked = true;
+                        m_synclock.notifyAll();
+                    }
+                }
             } else if (this.callMode == CallMode.OUTBOUND) {
                 if (e.getCall() == caller) {
                     msmlSip.createAckRequest(e.getRes());
@@ -302,7 +344,9 @@ public class MsmlCall extends XMSCall implements Observer {
                 }
             }
         } else if (e.getType().equals(EventType.INFOREQUEST)) {
-            msmlSip.createInfoResponse(e.getReq());
+            if (!MakecallOptions.m_OKOnInfoEnabled) {
+                msmlSip.createInfoResponse(e.getReq());
+            }
 
             String info = new String(e.getReq().getRawContent());
             String name = null;
@@ -349,6 +393,8 @@ public class MsmlCall extends XMSCall implements Observer {
                         this.callMode = CallMode.OUTBOUND;
                         msmlSip = null;
                         caller = null;
+                        MakecallOptions.EnableACKOn200(false);
+                        MakecallOptions.EnableOKOnInfo(false);
                         m_synclock.notifyAll();
                     }
                 } else if (m_state != XMSCallState.DISCONNECTED) {

@@ -6,6 +6,7 @@
 package com.dialogic.xmstesting;
 
 import com.dialogic.examples.XMSInboundEchoTest;
+import com.dialogic.examples.XMSInboundNoAutoConnectTest;
 import com.dialogic.examples.XMSInboundRecordTest;
 import com.dialogic.examples.XMSInboundTest;
 import com.dialogic.examples.XMSOutboundTest;
@@ -18,10 +19,11 @@ public class TestSuite {
 
     public static void main(String[] args) {
 
-        new XMSInboundTest().start();
+        //new XMSInboundTest().start();
         //new XMSOutboundTest().start();
         //new XMSInboundRecordTest().start();
-        //new XMSInboundEchoTest().start();
+        new XMSInboundEchoTest().start();
+        //new XMSInboundNoAutoConnectTest().start();
 
     }
 }

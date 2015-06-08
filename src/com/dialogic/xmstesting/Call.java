@@ -315,7 +315,7 @@ public class Call extends Observable {
      *
      * @param msml
      */
-    public void createInfoRequest(String msml) {
+    private void createInfoRequest(String msml) {
         HeaderFactory headerFactory = sipConnector.getHeaderFactory();
         try {
             Request infoRequest = this.getDialog().createRequest(Request.INFO);
@@ -596,8 +596,8 @@ public class Call extends Observable {
         this.remoteSdp = content;
     }
 
-    public void sendInfo() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void sendInfo(String content) {
+        createInfoRequest(content);
     }
 
     public void setCallId(String callId) {
@@ -820,6 +820,10 @@ public class Call extends Observable {
 
     public void setACKOn200(boolean b) {
         isACKOn200 = b;
+    }
+
+    public void setOKOnInfo(boolean b) {
+        isOKOnInfo = b;
     }
 
     public void ackCall(Response response) {

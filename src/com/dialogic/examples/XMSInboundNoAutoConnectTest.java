@@ -15,10 +15,8 @@ import com.dialogic.xmstesting.MsmlCall;
  *
  * @author ssatyana
  */
-public class XMSOutboundTest {
-    
-    String makecalldest = "toto@10.20.120.24:5060";
-    
+public class XMSInboundNoAutoConnectTest {
+
     public void start() {
         try {
 
@@ -28,20 +26,27 @@ public class XMSOutboundTest {
 //        XMSCall myCall = myFactory.CreateCall(myConnector); - msml call 
             MsmlCall call = new MsmlCall();
             call.setFromAddress(Inet4Address.getLocalHost().getHostAddress());
-            
-            call.MakecallOptions.EnableACKOn200(false);
-            call.MakecallOptions.EnableOKOnInfo(false);
-            XMSReturnCode result = call.makeCall(makecalldest);
-            
-            System.out.println("RESULT" + result);
-            
+            call.WaitcallOptions.EnableAutoConnect(false);
+
+            XMSReturnCode waitResult = call.waitCall();
+
+            System.out.println("WAIT CALL RESULT -> " + waitResult);
+
+            XMSReturnCode acceptResult = call.acceptCall();
+
+            System.out.println("ACCEPT CALL RESULT -> " + acceptResult);
+
+            XMSReturnCode answerResult = call.answerCall();
+
+            System.out.println("ANSWER CALL RESULT -> " + answerResult);
+
             XMSReturnCode playResult = call.play("file://verification/greeting.wav");
-            
-            System.out.println("RESULT" + playResult);
-            
+
+            System.out.println("PLAY RESULT -> " + playResult);
+
             call.dropCall();
         } catch (Exception ex) {
-            Logger.getLogger(XMSOutboundTest.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
+            Logger.getLogger(XMSInboundNoAutoConnectTest.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }
     }
 }
