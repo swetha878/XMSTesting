@@ -69,8 +69,8 @@ public class Call extends Observable {
     private Map<String, Object> headers = new HashMap<>();
     static private Map<String, FromHeader> fromHeadersMap = new HashMap<>();
     static private Map<String, ToHeader> toHeadersMap = new HashMap<>();
-    static private Map<String, ViaHeader> viaHeadersMap = new HashMap<>();
-    static private Map<String, ContactHeader> contactHeadersMap = new HashMap<>();
+    static private Map<Integer, ViaHeader> viaHeadersMap = new HashMap<>();
+    static private Map<Integer, ContactHeader> contactHeadersMap = new HashMap<>();
     static private Map<String, CSeqHeader> cSeqHeadersMap = new HashMap<>();
     static private Map<String, ContentTypeHeader> contentTypeHeaderMap = new HashMap<>();
     private List<Call> pendingCallList = new ArrayList();
@@ -96,7 +96,7 @@ public class Call extends Observable {
         Request request = requestEvent.getRequest();
         switch (request.getMethod()) {
             case Request.INVITE:
-                if (isInvite) {
+                if (isInvite && this.getRemoteSdp() != null) {
                     doReInviteOk(request);
                 } else {
                     this.createTryingResponse(request);
@@ -229,12 +229,12 @@ public class Call extends Observable {
 
             ArrayList<ViaHeader> viaHeaders = new ArrayList<>();
             ViaHeader viaHeader;
-            if (this.getViaHeader(this.getFromAddress()) != null) {
-                viaHeader = this.getViaHeader(this.getFromAddress());
+            if (this.getViaHeader(sipConnector.sipProvider.getListeningPoint("udp").getPort()) != null) {
+                viaHeader = this.getViaHeader(sipConnector.sipProvider.getListeningPoint("udp").getPort());
             } else {
                 viaHeader = headerFactory.createViaHeader(this.getFromAddress(),
                         sipConnector.sipProvider.getListeningPoint("udp").getPort(), "udp", null);
-                viaHeadersMap.put(this.getFromAddress(), viaHeader);
+                viaHeadersMap.put(sipConnector.sipProvider.getListeningPoint("udp").getPort(), viaHeader);
             }
             viaHeaders.add(viaHeader);
 
@@ -257,24 +257,23 @@ public class Call extends Observable {
                         callIdHeader, cSeqHeader, fromHeader, toHeader, viaHeaders, maxForwardsHeader);
             }
 
-            Header supportedHeader = headerFactory.createHeader("Supported", "timer");
-            Header requireHeader = headerFactory.createHeader("Require", "timer");
-            Header sessionExpires = headerFactory.createHeader("Session-Expires", "90;refresher=uas");
-            Header minSE = headerFactory.createHeader("Min-SE", "90");
-            request.addHeader(supportedHeader);
-            request.addHeader(requireHeader);
-            request.addHeader(sessionExpires);
-            request.addHeader(minSE);
-
+//            Header supportedHeader = headerFactory.createHeader("Supported", "timer");
+//            Header requireHeader = headerFactory.createHeader("Require", "timer");
+//            Header sessionExpires = headerFactory.createHeader("Session-Expires", "90;refresher=uas");
+//            Header minSE = headerFactory.createHeader("Min-SE", "90");
+//            request.addHeader(supportedHeader);
+//            request.addHeader(requireHeader);
+//            request.addHeader(sessionExpires);
+//            request.addHeader(minSE);
             ContactHeader contactHeader;
-            if (this.getContactHeader(this.getFromAddress()) != null) {
-                contactHeader = this.getContactHeader(this.getFromAddress());
+            if (this.getContactHeader(sipConnector.sipProvider.getListeningPoint("udp").getPort()) != null) {
+                contactHeader = this.getContactHeader(sipConnector.sipProvider.getListeningPoint("udp").getPort());
             } else {
                 SipURI contactUri = addressFactory.createSipURI(this.getFromUser(), this.getFromAddress());
                 contactUri.setPort(sipConnector.sipProvider.getListeningPoint("udp").getPort());
                 Address contactAddress = addressFactory.createAddress(contactUri);
                 contactHeader = headerFactory.createContactHeader(contactAddress);
-                contactHeadersMap.put(this.getFromAddress(), contactHeader);
+                contactHeadersMap.put(sipConnector.sipProvider.getListeningPoint("udp").getPort(), contactHeader);
             }
             request.addHeader(contactHeader);
 
@@ -296,15 +295,17 @@ public class Call extends Observable {
         System.out.println("CREATING ACK REQUEST ");
         Request ackRequest;
         try {
-            ackRequest = this.getDialog().createAck(((CSeqHeader) response.getHeader(CSeqHeader.NAME)).getSeqNumber());
-            if (!isACKOn200 && this.getLocalSdp() == null) {
-                HeaderFactory headerFactory = sipConnector.getHeaderFactory();
-                ContentTypeHeader contTypeHeader = headerFactory.createContentTypeHeader("application", "sdp");
-                ackRequest.setContent(response.getRawContent(), contTypeHeader);
+            if (this.getDialog() != null) {
+                ackRequest = this.getDialog().createAck(((CSeqHeader) response.getHeader(CSeqHeader.NAME)).getSeqNumber());
+                if (!isACKOn200 && this.getLocalSdp() == null) {
+                    HeaderFactory headerFactory = sipConnector.getHeaderFactory();
+                    ContentTypeHeader contTypeHeader = headerFactory.createContentTypeHeader("application", "sdp");
+                    ackRequest.setContent(response.getRawContent(), contTypeHeader);
+                }
+                sipConnector.sendAck(ackRequest, this.getDialog());
+                Event eve = createResponseEvent(response, EventType.CONNECTED);
+                setValue(eve);
             }
-            sipConnector.sendAck(ackRequest, this.getDialog());
-            Event eve = createResponseEvent(response, EventType.CONNECTED);
-            setValue(eve);
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
         }
@@ -771,7 +772,7 @@ public class Call extends Observable {
         }
     }
 
-    public ContactHeader getContactHeader(String adr) {
+    public ContactHeader getContactHeader(Integer adr) {
         return contactHeadersMap.get(adr);
     }
 
@@ -783,13 +784,13 @@ public class Call extends Observable {
             contactUri.setPort(port);
             Address contactAddress = addressFactory.createAddress(contactUri);
             ContactHeader contactHeader = headerFactory.createContactHeader(contactAddress);
-            contactHeadersMap.put(adr, contactHeader);
+            contactHeadersMap.put(port, contactHeader);
         } catch (ParseException ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
         }
     }
 
-    public ViaHeader getViaHeader(String adr) {
+    public ViaHeader getViaHeader(int adr) {
         return viaHeadersMap.get(adr);
     }
 
@@ -797,7 +798,7 @@ public class Call extends Observable {
         HeaderFactory headerFactory = sipConnector.getHeaderFactory();
         try {
             ViaHeader viaHeader = headerFactory.createViaHeader(host, port, transport, branch);
-            viaHeadersMap.put(host, viaHeader);
+            viaHeadersMap.put(port, viaHeader);
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
         }

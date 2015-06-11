@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -63,14 +64,15 @@ public class Connector implements SipListener {
     HeaderFactory headerFactory;    // Used to create SIP headers.
     AddressFactory addressFactory;  // Used to create SIP address factory.
     ListeningPoint listeningPoint;  // SIP listening IP address/port.
-
+    Properties properties;
+    static SipListener sipListener;
     //Objects keeping local configuration.
     String protocol = "udp";        // The local protocol (UDP).
     static private Map<String, Call> callMap = new HashMap<>();
     ClientTransaction clientTransaction = null;
     public static String responseMessage;
-    private List<Call> waitCallList = new ArrayList();
-    private Map<String, Call> activeCallMap = new HashMap<>();
+    static private List<Call> waitCallList = new ArrayList();
+    static private Map<String, Call> activeCallMap = new HashMap<>();
 
     /**
      * Creates the sip stack, sip provider and factories for
@@ -80,24 +82,27 @@ public class Connector implements SipListener {
      * @param myPort
      */
     public Connector(String myIpAddress, int myPort) {
-        sipFactory = SipFactory.getInstance();
-        logger.log(Level.INFO, "Getting a sip instance {0}", sipFactory);
-        //System.out.println("Getting a sip instance" + sipFactory);
-        sipFactory.setPathName("gov.nist"); // denotes the SIP stack
+        if (sipFactory == null) {
+            sipFactory = SipFactory.getInstance();
+            logger.log(Level.INFO, "Getting a sip instance {0}", sipFactory);
+            //System.out.println("Getting a sip instance" + sipFactory);
+            sipFactory.setPathName("gov.nist"); // denotes the SIP stack
 
-        Properties properties = new Properties();
-        properties.setProperty("javax.sip.STACK_NAME", "SipCall");
-        properties.setProperty("javax.sip.IP_ADDRESS", myIpAddress);
-        properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "32");
+            properties = new Properties();
+            properties.setProperty("javax.sip.STACK_NAME", "SipCall");
+            properties.setProperty("javax.sip.IP_ADDRESS", myIpAddress);
+            properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "32");
 
-        properties.setProperty("gov.nist.javax.sip.SERVER_LOG", "SipCall.txt");
-        properties.setProperty("gov.nist.javax.sip.DEBUG_LOG", "SipCall.log");
-
+            properties.setProperty("gov.nist.javax.sip.SERVER_LOG", "SipCall.txt");
+            properties.setProperty("gov.nist.javax.sip.DEBUG_LOG", "SipCall.log");
+        }
         try {
-            // Creating a sip stack
-            sipStack = sipFactory.createSipStack(properties);
-            logger.log(Level.INFO, "SipStack Created {0}", sipStack);
-            //System.out.println(timeStamp() + "sipStack created -> " + sipStack);
+            if (sipStack == null) {
+                // Creating a sip stack
+                sipStack = sipFactory.createSipStack(properties);
+                logger.log(Level.INFO, "SipStack Created {0}", sipStack);
+                //System.out.println(timeStamp() + "sipStack created -> " + sipStack);
+            }
 
             // Sip provider with listening point
             ListeningPoint lp = sipStack.createListeningPoint(myIpAddress, myPort, "udp");
@@ -105,9 +110,20 @@ public class Connector implements SipListener {
             logger.log(Level.INFO, "SipProvider Created {0}", sipProvider);
             //System.out.println(timeStamp() + "sipProvider created -> " + sipProvider);
 
-            SipListener sipListener = this;
-            sipProvider.addSipListener(sipListener);
+            System.out.println("Provider -> " + sipProvider);
+            int counter = 0;
+            Iterator it = sipStack.getSipProviders();
+            while (it.hasNext()) {
+                Object e = it.next();
+                System.out.println("Providers -> " + e);
+                counter++;
+            }
 
+            if (counter == 1) {
+                sipListener = this;
+                //sipProvider.addSipListener(sipListener);
+            }
+            sipProvider.addSipListener(sipListener);
             this.headerFactory = sipFactory.createHeaderFactory();
             this.messageFactory = sipFactory.createMessageFactory();
             this.addressFactory = sipFactory.createAddressFactory();
@@ -143,24 +159,31 @@ public class Connector implements SipListener {
             case Request.INVITE:
                 logger.log(Level.FINE, "INVITE RECIEVED {0}", request);
                 System.out.println(timeStamp() + "INVITE RECIEVED -> " + request);
-                if (waitCallList.size() > 0) {
-                    for (Call c1 : waitCallList) {
-                        System.out.println(((CallIdHeader) request.getHeader(CallIdHeader.NAME)).getCallId());
-                        call = activeCallMap.get(CallId);
-                        if (call != null) {
-                            // reinvite
-                            c1.setServerTransaction(serverTransaction);
-                            c1.handleStackRequest(requestEvent);
-                        } else {
+
+                System.out.println(((CallIdHeader) request.getHeader(CallIdHeader.NAME)).getCallId());
+                call = activeCallMap.get(CallId);
+                if (call != null) {
+                    // reinvite
+                    System.out.println("Reinvite");
+                    call.setServerTransaction(serverTransaction);
+                    call.handleStackRequest(requestEvent);
+                } else {
+                    if (waitCallList.size() > 0) {
+                        Call c1 = waitCallList.get(0);
+                        if (!activeCallMap.containsValue(c1)) {
                             c1.setInviteRequest(request);
                             c1.setServerTransaction(serverTransaction);
                             activeCallMap.put(CallId, c1);
+                            waitCallList.remove(c1);
                             c1.handleStackRequest(requestEvent);
                         }
+
+                    } else {
+                        // send 486, no call available
+                        System.out.println("Nothing in wait list");
                     }
-                } else {
-                    // send 481
                 }
+
                 break;
             case Request.OPTIONS:
                 System.out.println(timeStamp() + "OPTIONS RECIEVED -> " + request);
@@ -173,7 +196,7 @@ public class Connector implements SipListener {
                 break;
             case Request.INFO:
                 System.out.println(timeStamp() + "INFO RECIEVED -> " + request);
-                call = callMap.get(requestEvent.getDialog().getCallId().getCallId());
+                call = activeCallMap.get(requestEvent.getDialog().getCallId().getCallId());
                 call.setServerTransaction(serverTransaction);
                 call.handleStackRequest(requestEvent);
                 break;
@@ -214,7 +237,7 @@ public class Connector implements SipListener {
         Response response = responseEvent.getResponse();
         CSeqHeader cSeq = (CSeqHeader) response.getHeader(CSeq.NAME);
         Dialog dialog = responseEvent.getDialog();
-        Call call = callMap.get(dialog.getCallId().getCallId());
+        Call call = activeCallMap.get(dialog.getCallId().getCallId());
         call.setClientTransaction(responseEvent.getClientTransaction());
         switch (response.getStatusCode()) {
             case Response.OK:
@@ -257,6 +280,7 @@ public class Connector implements SipListener {
                 break;
             case Response.TRYING:
                 System.out.println(timeStamp() + "RESPONSE 100 TRYING RECIEVED -> " + responseEvent.getResponse());
+                call = activeCallMap.get(dialog.getCallId().getCallId());
                 call.handleStackResponse(response, cSeq, dialog);
                 break;
             case Response.RINGING:

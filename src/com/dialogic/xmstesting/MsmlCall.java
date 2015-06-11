@@ -46,11 +46,12 @@ public class MsmlCall extends XMSCall implements Observer {
     static int mediaStatusCode;
     private static String connectionAddress;
 
-    public MsmlCall() {
+    public MsmlCall(Connector connector) {
         try {
-            this.connector = new Connector(Inet4Address.getLocalHost().getHostAddress(), 5070);
+            //this.connector = new Connector(Inet4Address.getLocalHost().getHostAddress(), 5070);
+            this.connector = connector;
             m_state = XMSCallState.NULL;
-        } catch (UnknownHostException ex) {
+        } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
         }
     }
@@ -59,6 +60,7 @@ public class MsmlCall extends XMSCall implements Observer {
     public XMSReturnCode waitCall() {
         try {
             caller = new Call(this.connector);
+            System.out.println(caller);
             caller.addObserver(this);
             callMode = CallMode.INBOUND;
             m_state = XMSCallState.WAITCALL;
@@ -72,6 +74,16 @@ public class MsmlCall extends XMSCall implements Observer {
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
         }
+        return XMSReturnCode.SUCCESS;
+    }
+
+    public XMSReturnCode waitCallAsyn() {
+        caller = new Call(this.connector);
+        System.out.println(caller);
+        caller.addObserver(this);
+        callMode = CallMode.INBOUND;
+        m_state = XMSCallState.WAITCALL;
+        caller.addToWaitList();
         return XMSReturnCode.SUCCESS;
     }
 
@@ -247,6 +259,51 @@ public class MsmlCall extends XMSCall implements Observer {
         return XMSReturnCode.FAILURE;
     }
 
+    public XMSReturnCode createConfAndJoin(String name) {
+        try {
+            if (msmlSip != null && name != null) {
+                msmlSip.sendInfo(buildConfAndJoinMsml(name));
+                m_state = XMSCallState.CONF;
+                synchronized (m_synclock) {
+                    while (!isBlocked) {
+                        m_synclock.wait();
+                    }
+                    isBlocked = false;
+                }
+                if (mediaStatusCode == 200) {
+                    return XMSReturnCode.SUCCESS;
+                } else {
+                    return XMSReturnCode.FAILURE;
+                }
+            }
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
+        }
+        return XMSReturnCode.FAILURE;
+    }
+
+    public XMSReturnCode add(String name) {
+        try {
+            if (msmlSip != null && name != null) {
+                msmlSip.sendInfo(buildJoinConfMsml(name));
+                synchronized (m_synclock) {
+                    while (!isBlocked) {
+                        m_synclock.wait();
+                    }
+                    isBlocked = false;
+                }
+                if (mediaStatusCode == 200) {
+                    return XMSReturnCode.SUCCESS;
+                } else {
+                    return XMSReturnCode.FAILURE;
+                }
+            }
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
+        }
+        return XMSReturnCode.FAILURE;
+    }
+
     public String getFromAddress() {
         return this.fromAddr;
     }
@@ -301,7 +358,9 @@ public class MsmlCall extends XMSCall implements Observer {
                     msmlSip.createAckRequest(e.getRes());
                     caller.createAckRequest(e.getRes());
                 } else if (caller == null) {
-                    makeCall(callerToUserId + "@" + callerToAdr);
+                    if (callerToAdr != msmlSip.getToAddress()) {
+                        makeCall(callerToUserId + "@" + callerToAdr);
+                    }
                 }
             }
         } else if (e.getType().equals(EventType.CONNECTED)) {
@@ -459,6 +518,35 @@ public class MsmlCall extends XMSCall implements Observer {
         return msml;
     }
 
+    private static String buildConfAndJoinMsml(String name) {
+        String msml = "<msml version=\"1.1\">\n"
+                + "<createconference name=\"" + name + "\" deletewhen=\"nocontrol\" mark=\"1\" term=\"true\">\n"
+                + "<audiomix id=\"mix491230000001\"/>\n"
+                + "</createconference>\n"
+                + "<join id1=\"conf:" + name + "\" id2=\"conn:1234\" mark=\"2\">\n"
+                + "<stream media=\"audio\"/>\n"
+                + "</join>\n"
+                + "</msml>";
+        return msml;
+    }
+
+    private static String buildJoinConfMsml(String name) {
+        String msml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<msml version=\"1.1\">\n"
+                + "<join id1=\"conf:" + name + "\" id2=\"conn:1234\" mark=\"2\">\n"
+                + "<stream media=\"audio\"/>\n"
+                + "</join>\n"
+                + "</msml>";
+        return msml;
+    }
+
+    private static String buildDestroyConfMsml(String name) {
+        String msml = "<msml version=\"1.1\">\n"
+                + "<destroyconference id=\"conf:" + name + "\" mark=\"1\" />\n"
+                + "</msml>";
+        return msml;
+    }
+
     private void setXMSInfo(Call c) {
         try {
             FileInputStream xmlFile = new FileInputStream("ConnectorConfig.xml");
@@ -494,7 +582,6 @@ public class MsmlCall extends XMSCall implements Observer {
      * @param aConnectionAddress the connectionAddress to set
      */
     public void setConnectionAddress(String aConnectionAddress) {
-        System.out.println("CONNECTION ADDRESS ->" + aConnectionAddress);
         connectionAddress = aConnectionAddress;
     }
 }
