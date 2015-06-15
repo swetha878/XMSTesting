@@ -5,6 +5,7 @@
  */
 package com.dialogic.xmstesting;
 
+import com.dialogic.examples.XMSConference;
 import com.dialogic.examples.XMSMultipleInvites;
 import com.dialogic.examples.XMSInboundEchoTest;
 import com.dialogic.examples.XMSInboundNoAutoConnectTest;
@@ -21,12 +22,13 @@ public class TestSuite {
 
     public static void main(String[] args) {
 
-        //new XMSInboundTest().start();
+        new XMSInboundTest().start();
         //new XMSOutboundTest().start();
         //new XMSInboundRecordTest().start();
-        new XMSInboundEchoTest().start();
+        //new XMSInboundEchoTest().start();
         //new XMSInboundNoAutoConnectTest().start();
         //new XMSMultipleInvites().start();
         //new XMSMultipleInboundTest().start();
+        //new XMSConference().start();
     }
 }

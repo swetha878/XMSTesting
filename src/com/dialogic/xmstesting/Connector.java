@@ -52,7 +52,7 @@ import javax.sip.message.Response;
  *
  * @author ssatyana
  */
-public class Connector implements SipListener {
+public class Connector implements SipListener, Runnable {
 
     static final Logger logger = Logger.getLogger(Connector.class.getName());
 
@@ -73,6 +73,7 @@ public class Connector implements SipListener {
     public static String responseMessage;
     static private List<Call> waitCallList = new ArrayList();
     static private Map<String, Call> activeCallMap = new HashMap<>();
+    private final Object m_synclock = new Object();
 
     /**
      * Creates the sip stack, sip provider and factories for
@@ -169,15 +170,19 @@ public class Connector implements SipListener {
                     call.handleStackRequest(requestEvent);
                 } else {
                     if (waitCallList.size() > 0) {
+                        System.out.println("REQQUESTTTTTT");
                         Call c1 = waitCallList.get(0);
                         if (!activeCallMap.containsValue(c1)) {
+                            System.out.println("Starting a new thread");
+                            //new Thread(this).start();
+                            System.out.println("After run method");
                             c1.setInviteRequest(request);
                             c1.setServerTransaction(serverTransaction);
                             activeCallMap.put(CallId, c1);
                             waitCallList.remove(c1);
+                            //RequestProcessingThread thread = new RequestProcessingThread(requestEvent, c1);
                             c1.handleStackRequest(requestEvent);
                         }
-
                     } else {
                         // send 486, no call available
                         System.out.println("Nothing in wait list");
@@ -188,10 +193,9 @@ public class Connector implements SipListener {
             case Request.OPTIONS:
                 System.out.println(timeStamp() + "OPTIONS RECIEVED -> " + request);
                 if (waitCallList.size() > 0) {
-                    for (Call c1 : waitCallList) {
-                        c1.setServerTransaction(serverTransaction);
-                        c1.handleStackRequest(requestEvent);
-                    }
+                    Call c1 = waitCallList.get(0);
+                    c1.setServerTransaction(serverTransaction);
+                    c1.handleStackRequest(requestEvent);
                 }
                 break;
             case Request.INFO:
@@ -325,6 +329,7 @@ public class Connector implements SipListener {
      */
     public void sendRequest(Request request, Call call) {
         System.out.println("SEND " + request.getMethod() + " REQUEST -> " + request);
+        Map<Request, Call> queueMap = new HashMap<>();
         try {
             Dialog dialog = call.getDialog();
             clientTransaction = sipProvider.getNewClientTransaction(request);
@@ -335,7 +340,28 @@ public class Connector implements SipListener {
                 clientTransaction.sendRequest();
             }
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            if (ex.getMessage().equalsIgnoreCase("Transaction already exists!")) {
+                queueMap.put(request, call);
+                try {
+                    synchronized (m_synclock) {
+                        System.out.println("block code");
+                        m_synclock.wait(500);
+
+                        System.out.println("Wait over");
+                        if (queueMap.size() > 0) {
+                            Iterator it = queueMap.entrySet().iterator();
+                            while (it.hasNext()) {
+                                Map.Entry item = (Map.Entry) it.next();
+                                sendRequest((Request) item.getKey(), (Call) item.getValue());
+                                it.remove();
+                            }
+                        }
+                        System.out.println("Unblock at sendRequest");
+                    }
+                } catch (InterruptedException ex1) {
+                    logger.log(Level.SEVERE, null, ex1);
+                }
+            }
         }
     }
 
@@ -532,5 +558,11 @@ public class Connector implements SipListener {
 
     public void addToActiveMap(String id, Call call) {
         activeCallMap.put(id, call);
+    }
+
+    @Override
+    public void run() {
+//        System.out.println("Starting a new thread followed by run method");
+//        System.out.println("Running thread ->" + Thread.currentThread().getId());
     }
 }

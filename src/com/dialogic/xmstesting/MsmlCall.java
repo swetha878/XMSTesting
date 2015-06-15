@@ -105,7 +105,7 @@ public class MsmlCall extends XMSCall implements Observer {
                 // get XMS ip address and user from config file
                 setXMSInfo(msmlSip);
                 msmlSip.setFromAddress(Inet4Address.getLocalHost().getHostAddress());
-                if (caller != null) {
+                if (caller != null && caller.getRemoteSdp() != null) {
                     msmlSip.setLocalSdp(caller.getRemoteSdp());
                 }
                 if (!MakecallOptions.m_ACKOn200Enabled) {
@@ -259,23 +259,37 @@ public class MsmlCall extends XMSCall implements Observer {
         return XMSReturnCode.FAILURE;
     }
 
-    public XMSReturnCode createConfAndJoin(String name) {
+    public XMSReturnCode createConf(String name) {
         try {
-            if (msmlSip != null && name != null) {
-                msmlSip.sendInfo(buildConfAndJoinMsml(name));
-                m_state = XMSCallState.CONF;
+            if (msmlSip == null) {
+                msmlSip = new Call(connector);
+                msmlSip.addObserver(this);
+                setXMSInfo(msmlSip);
+                msmlSip.setFromAddress(Inet4Address.getLocalHost().getHostAddress());
+                callMode = CallMode.CONF;
+                msmlSip.createInviteRequest(msmlSip.getToUser(), msmlSip.getToAddress());
                 synchronized (m_synclock) {
                     while (!isBlocked) {
                         m_synclock.wait();
                     }
                     isBlocked = false;
-                }
-                if (mediaStatusCode == 200) {
-                    return XMSReturnCode.SUCCESS;
-                } else {
-                    return XMSReturnCode.FAILURE;
+                    msmlSip.sendInfo(buildConfMsml(name));
+                    m_state = XMSCallState.CONF;
+                    synchronized (m_synclock) {
+                        while (!isBlocked) {
+                            m_synclock.wait();
+                        }
+                        isBlocked = false;
+                    }
+                    if (mediaStatusCode == 200) {
+                        msmlSip = null;
+                        return XMSReturnCode.SUCCESS;
+                    } else {
+                        return XMSReturnCode.FAILURE;
+                    }
                 }
             }
+
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
         }
@@ -346,6 +360,9 @@ public class MsmlCall extends XMSCall implements Observer {
         } else if (e.getType().equals(EventType.CONNECTING)) {
             if (this.callMode == CallMode.INBOUND) {
                 if (WaitcallOptions.m_autoConnectEnabled) {
+                    if (caller.getLocalSdp() == null) {
+                        caller.setLocalSdp(e.getCall().getRemoteSdp());
+                    }
                     answerCall();
                 } else {
                     synchronized (m_synclock) {
@@ -361,6 +378,11 @@ public class MsmlCall extends XMSCall implements Observer {
                     if (callerToAdr != msmlSip.getToAddress()) {
                         makeCall(callerToUserId + "@" + callerToAdr);
                     }
+                }
+            } else {
+                synchronized (m_synclock) {
+                    isBlocked = true;
+                    m_synclock.notifyAll();
                 }
             }
         } else if (e.getType().equals(EventType.CONNECTED)) {
@@ -518,14 +540,11 @@ public class MsmlCall extends XMSCall implements Observer {
         return msml;
     }
 
-    private static String buildConfAndJoinMsml(String name) {
+    private static String buildConfMsml(String name) {
         String msml = "<msml version=\"1.1\">\n"
                 + "<createconference name=\"" + name + "\" deletewhen=\"nocontrol\" mark=\"1\" term=\"true\">\n"
                 + "<audiomix id=\"mix491230000001\"/>\n"
                 + "</createconference>\n"
-                + "<join id1=\"conf:" + name + "\" id2=\"conn:1234\" mark=\"2\">\n"
-                + "<stream media=\"audio\"/>\n"
-                + "</join>\n"
                 + "</msml>";
         return msml;
     }
@@ -584,4 +603,5 @@ public class MsmlCall extends XMSCall implements Observer {
     public void setConnectionAddress(String aConnectionAddress) {
         connectionAddress = aConnectionAddress;
     }
+
 }

@@ -16,7 +16,7 @@ import com.dialogic.xmstesting.MsmlCall;
  *
  * @author ssatyana
  */
-public class XMSInboundTest {
+public class XMSConference {
 
     public void start() {
         try {
@@ -25,19 +25,21 @@ public class XMSInboundTest {
 //        XMSObjectFactory myFactory = new XMSObjectFactory();
 //        XMSConnector myConnector = myFactory.CreateConnector("XMSConnectorConfig.xml");
 //        XMSCall myCall = myFactory.CreateCall(myConnector); - msml call 
-            MsmlCall call = new MsmlCall(connector);
-            call.setFromAddress(Inet4Address.getLocalHost().getHostAddress());
+            MsmlCall call1 = new MsmlCall(connector);
+            MsmlCall call2 = new MsmlCall(connector);
 
-            XMSReturnCode result = call.waitCall();
+            // factory creates the conference
+            call1.createConf("conf1");
 
-            System.out.println("WAIT CALL RESULT -> " + result);
+            call1.waitCall();
 
-            XMSReturnCode playResult = call.play("file://verification/greeting.wav");
+            call1.add("conf1");
 
-            System.out.println("PLAY RESULT -> " + playResult);
-            call.dropCall();
+            call2.waitCall();
+            call2.add("conf1");
+
         } catch (Exception ex) {
-            Logger.getLogger(XMSInboundTest.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
+            Logger.getLogger(XMSConference.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }
     }
 }

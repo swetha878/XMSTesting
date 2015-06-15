@@ -100,7 +100,9 @@ public class Call extends Observable {
                     doReInviteOk(request);
                 } else {
                     this.createTryingResponse(request);
-                    this.setRemoteSdp(new String(request.getRawContent()));
+                    if (request.getRawContent() != null) {
+                        this.setRemoteSdp(new String(request.getRawContent()));
+                    }
                     Event invite = createRequestEvent(request, EventType.INCOMING);
                     setValue(invite);
                     isInvite = true;
@@ -142,13 +144,13 @@ public class Call extends Observable {
             case Response.OK:
                 switch (cSeq.getMethod()) {
                     case Request.INVITE:
-                        if (isACKOn200) {
-                            createAckRequest(response);
-                        }
                         if (pendingCallList.contains(this)) {
                             System.out.println("repeated request");
                             // request repeated do not create an event
                         } else {
+                            if (isACKOn200) {
+                                createAckRequest(response);
+                            }
                             pendingCallList.add(this);
                             this.setRemoteSdp(new String(response.getRawContent()));
                             Event oK = createResponseEvent(response, EventType.CONNECTING);
@@ -456,7 +458,11 @@ public class Call extends Observable {
             okResponse.addHeader(allowHeader);
             ContentTypeHeader contentTypeHeader = headerFactory.createContentTypeHeader("application", "sdp");
 
-            okResponse.setContent(request.getContent(), contentTypeHeader);
+            if (request.getContent() != null) {
+                okResponse.setContent(request.getContent(), contentTypeHeader);
+            } else {
+                okResponse.setContent(this.getLocalSdp(), contentTypeHeader);
+            }
             sipConnector.sendResponse(okResponse, this);
         } catch (ParseException | InvalidArgumentException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);

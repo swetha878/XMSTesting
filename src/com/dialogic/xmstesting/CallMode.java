@@ -12,6 +12,7 @@ package com.dialogic.xmstesting;
 public enum CallMode {
 
     INBOUND,
-    OUTBOUND
+    OUTBOUND,
+    CONF
 
 }
