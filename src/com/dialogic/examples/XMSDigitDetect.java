@@ -16,7 +16,7 @@ import com.dialogic.xmstesting.MsmlCall;
  *
  * @author ssatyana
  */
-public class XMSConference {
+public class XMSDigitDetect {
 
     public void start() {
         try {
@@ -25,33 +25,19 @@ public class XMSConference {
 //        XMSObjectFactory myFactory = new XMSObjectFactory();
 //        XMSConnector myConnector = myFactory.CreateConnector("XMSConnectorConfig.xml");
 //        XMSCall myCall = myFactory.CreateCall(myConnector); - msml call 
-            MsmlCall call1 = new MsmlCall(connector);
-            MsmlCall call2 = new MsmlCall(connector);
+            MsmlCall call = new MsmlCall(connector);
+            call.setFromAddress(Inet4Address.getLocalHost().getHostAddress());
 
-            // factory creates the conference
-            call1.createConf("conf1");
+            XMSReturnCode result = call.waitCall();
 
-            call1.waitCall();
-            call1.add("conf1");
+            System.out.println("WAIT CALL RESULT -> " + result);
 
-            call2.waitCall();
-            call2.add("conf1");
+            XMSReturnCode playResult = call.playCollect("file://verification/main_menu.wav");
 
-            Sleep(50000);
-            call1.dropCall();
-            call2.dropCall();
+            System.out.println("PLAY RESULT -> " + playResult);
+            //call.dropCall();
         } catch (Exception ex) {
-            Logger.getLogger(XMSConference.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
+            Logger.getLogger(XMSDigitDetect.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }
-    }
-
-    public static void Sleep(int time) {
-        try {
-
-            Thread.sleep(time);
-        } catch (InterruptedException ex) {
-            System.out.print(ex);
-        }
-
     }
 }

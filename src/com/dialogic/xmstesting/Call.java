@@ -458,11 +458,11 @@ public class Call extends Observable {
             okResponse.addHeader(allowHeader);
             ContentTypeHeader contentTypeHeader = headerFactory.createContentTypeHeader("application", "sdp");
 
-            if (request.getContent() != null) {
-                okResponse.setContent(request.getContent(), contentTypeHeader);
-            } else {
-                okResponse.setContent(this.getLocalSdp(), contentTypeHeader);
-            }
+//            if (request.getContent() != null) {
+//                okResponse.setContent(request.getContent(), contentTypeHeader);
+//            } else {
+            okResponse.setContent(this.getLocalSdp(), contentTypeHeader);
+            //}
             sipConnector.sendResponse(okResponse, this);
         } catch (ParseException | InvalidArgumentException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
