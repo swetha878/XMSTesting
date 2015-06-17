@@ -5,6 +5,7 @@
  */
 package com.dialogic.xmstesting;
 
+import java.util.Set;
 import javax.sip.RequestEvent;
 import javax.sip.message.Request;
 
@@ -23,13 +24,13 @@ public class RequestProcessingThread extends Thread {
         this.request = requestEvent.getRequest();
         this.requestEvent = requestEvent;
         this.call = call;
-        this.start();
+        //this.start();
     }
 
     @Override
     public void run() {
-        System.out.println("Running thread!!->" + Thread.currentThread().getId());
-        System.out.println("Number of threads->" + Thread.getAllStackTraces().keySet().size());
-        //call.handleStackRequest(requestEvent);
+        Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+        System.out.println("Active Threads Count : " + threadSet.size());
+        call.handleStackRequest(requestEvent);
     }
 }

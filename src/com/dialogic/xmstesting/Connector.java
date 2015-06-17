@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TooManyListenersException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.sip.ClientTransaction;
 import javax.sip.Dialog;
 import javax.sip.DialogTerminatedEvent;
@@ -41,10 +41,14 @@ import javax.sip.TransactionUnavailableException;
 import javax.sip.TransportNotSupportedException;
 import javax.sip.header.CSeqHeader;
 import javax.sip.header.CallIdHeader;
+import javax.sip.header.ContactHeader;
+import javax.sip.header.FromHeader;
 import javax.sip.header.HeaderFactory;
 import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Connector that creates a sip stack to handle requests/responses. Implements
@@ -54,7 +58,7 @@ import javax.sip.message.Response;
  */
 public class Connector implements SipListener, Runnable {
 
-    static final Logger logger = Logger.getLogger(Connector.class.getName());
+    static final Logger logger = LogManager.getLogger(Connector.class.getName());
 
     // Objects used to communicate to the JAIN SIP API.
     SipFactory sipFactory;          // Used to access the SIP API.
@@ -74,6 +78,7 @@ public class Connector implements SipListener, Runnable {
     static private List<Call> waitCallList = new ArrayList();
     static private Map<String, Call> activeCallMap = new HashMap<>();
     private final Object m_synclock = new Object();
+    //ExecutorService executor = Executors.newFixedThreadPool(100);
 
     /**
      * Creates the sip stack, sip provider and factories for
@@ -85,8 +90,6 @@ public class Connector implements SipListener, Runnable {
     public Connector(String myIpAddress, int myPort) {
         if (sipFactory == null) {
             sipFactory = SipFactory.getInstance();
-            logger.log(Level.INFO, "Getting a sip instance {0}", sipFactory);
-            //System.out.println("Getting a sip instance" + sipFactory);
             sipFactory.setPathName("gov.nist"); // denotes the SIP stack
 
             properties = new Properties();
@@ -99,24 +102,20 @@ public class Connector implements SipListener, Runnable {
         }
         try {
             if (sipStack == null) {
-                // Creating a sip stack
                 sipStack = sipFactory.createSipStack(properties);
-                logger.log(Level.INFO, "SipStack Created {0}", sipStack);
-                //System.out.println(timeStamp() + "sipStack created -> " + sipStack);
+                logger.info("SipStack Created {}", sipStack);
             }
 
             // Sip provider with listening point
             ListeningPoint lp = sipStack.createListeningPoint(myIpAddress, myPort, "udp");
             sipProvider = sipStack.createSipProvider(lp);
-            logger.log(Level.INFO, "SipProvider Created {0}", sipProvider);
-            //System.out.println(timeStamp() + "sipProvider created -> " + sipProvider);
+            logger.info("SipProvider Created {}", sipProvider);
 
-            System.out.println("Provider -> " + sipProvider);
             int counter = 0;
             Iterator it = sipStack.getSipProviders();
             while (it.hasNext()) {
                 Object e = it.next();
-                System.out.println("Providers -> " + e);
+                //System.out.println("Providers -> " + e);
                 counter++;
             }
 
@@ -129,7 +128,7 @@ public class Connector implements SipListener, Runnable {
             this.messageFactory = sipFactory.createMessageFactory();
             this.addressFactory = sipFactory.createAddressFactory();
         } catch (PeerUnavailableException | TransportNotSupportedException | InvalidArgumentException | ObjectInUseException | TooManyListenersException ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -152,46 +151,46 @@ public class Connector implements SipListener, Runnable {
                 serverTransaction = sipProvider.getNewServerTransaction(request);
             }
         } catch (TransactionAlreadyExistsException | TransactionUnavailableException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.fatal(e.getMessage(), e);
         }
         Call call;
         String CallId = ((CallIdHeader) request.getHeader(CallIdHeader.NAME)).getCallId();
+        String contactAddress = "";
+        if (request.getHeader(ContactHeader.NAME) != null) {
+            contactAddress = ((ContactHeader) request.getHeader(ContactHeader.NAME))
+                    .getAddress().toString();
+        }
         switch (request.getMethod()) {
             case Request.INVITE:
-                logger.log(Level.FINE, "INVITE RECIEVED {0}", request);
-                System.out.println(timeStamp() + "INVITE RECIEVED -> " + request);
+                logger.info("INVITE RECIEVED: " + contactAddress);
+                logger.debug("INVITE RECIEVED \n" + request);
 
-                System.out.println(((CallIdHeader) request.getHeader(CallIdHeader.NAME)).getCallId());
                 call = activeCallMap.get(CallId);
                 if (call != null) {
-                    // reinvite
-                    System.out.println("Reinvite");
+                    logger.info("REINVITE RECIEVED: " + contactAddress);
                     call.setServerTransaction(serverTransaction);
                     call.handleStackRequest(requestEvent);
                 } else {
                     if (waitCallList.size() > 0) {
-                        System.out.println("REQQUESTTTTTT");
                         Call c1 = waitCallList.get(0);
                         if (!activeCallMap.containsValue(c1)) {
-                            System.out.println("Starting a new thread");
-                            //new Thread(this).start();
-                            System.out.println("After run method");
                             c1.setInviteRequest(request);
                             c1.setServerTransaction(serverTransaction);
                             activeCallMap.put(CallId, c1);
                             waitCallList.remove(c1);
-                            //RequestProcessingThread thread = new RequestProcessingThread(requestEvent, c1);
+                            //executor.execute(new RequestProcessingThread(requestEvent, c1));
                             c1.handleStackRequest(requestEvent);
                         }
                     } else {
                         // send 486, no call available
-                        System.out.println("Nothing in wait list");
+                        logger.info("NO CALLS IN THE WAITING LIST");
                     }
                 }
 
                 break;
             case Request.OPTIONS:
-                System.out.println(timeStamp() + "OPTIONS RECIEVED -> " + request);
+                logger.info("OPTIONS RECIEVED");
+                logger.debug("OPTIONS RECIEVED \n" + request);
                 if (waitCallList.size() > 0) {
                     Call c1 = waitCallList.get(0);
                     c1.setServerTransaction(serverTransaction);
@@ -199,20 +198,23 @@ public class Connector implements SipListener, Runnable {
                 }
                 break;
             case Request.INFO:
-                System.out.println(timeStamp() + "INFO RECIEVED -> " + request);
+                logger.info("INFO RECIEVED: " + contactAddress);
+                logger.debug("INFO RECIEVED \n" + request);
                 call = activeCallMap.get(requestEvent.getDialog().getCallId().getCallId());
                 call.setServerTransaction(serverTransaction);
                 call.handleStackRequest(requestEvent);
                 break;
             case Request.ACK:
-                System.out.println(timeStamp() + "ACK RECIEVED -> " + request);
+                logger.info("ACK RECIEVED: " + contactAddress);
+                logger.debug("ACK RECIEVED \n" + request);
                 call = activeCallMap.get(requestEvent.getDialog().getCallId().getCallId());
                 call.setDialog(requestEvent.getDialog());
                 call.setServerTransaction(serverTransaction);
                 call.handleStackRequest(requestEvent);
                 break;
             case Request.BYE:
-                System.out.println(timeStamp() + "BYE RECIEVED -> " + request);
+                logger.info("BYE RECIEVED: " + contactAddress);
+                logger.debug("BYE RECIEVED \n" + request);
                 call = activeCallMap.get(requestEvent.getDialog().getCallId().getCallId());
                 if (call != null) {
                     call.setServerTransaction(serverTransaction);
@@ -221,13 +223,18 @@ public class Connector implements SipListener, Runnable {
                 }
                 break;
             case Request.CANCEL:
-                System.out.println(timeStamp() + "CANCEL RECIEVED -> " + request);
-                call = callMap.get(requestEvent.getDialog().getCallId().getCallId());
+                logger.info("CANCEL RECIEVED: " + contactAddress);
+                logger.debug("CANCEL RECIEVED \n" + request);
+                call = activeCallMap.get(requestEvent.getDialog().getCallId().getCallId());
 
                 call.setServerTransaction(serverTransaction);
                 call.handleStackRequest(requestEvent);
                 break;
         }
+//        executor.shutdown();
+//        while (!executor.isTerminated()) {
+//        }
+//        System.out.println("Finished all the threads from the EXEC!!");
     }
 
     /**
@@ -243,11 +250,17 @@ public class Connector implements SipListener, Runnable {
         Dialog dialog = responseEvent.getDialog();
         Call call = activeCallMap.get(dialog.getCallId().getCallId());
         call.setClientTransaction(responseEvent.getClientTransaction());
+        String contactAddress = "";
+        if (response.getHeader(ContactHeader.NAME) != null) {
+            contactAddress = ((ContactHeader) response.getHeader(ContactHeader.NAME))
+                    .getAddress().toString();
+        }
         switch (response.getStatusCode()) {
             case Response.OK:
                 switch (cSeq.getMethod()) {
                     case Request.INVITE:
-                        System.out.println(timeStamp() + "RESPONSE 200OK FOR INVITE -> " + responseEvent.getResponse());
+                        logger.info("RESPONSE 200OK FOR INVITE RECIEVED: " + contactAddress);
+                        logger.debug("RESPONSE 200OK FOR INVITE RECIEVED \n" + response);
                         call.setDialog(dialog);
                         call = activeCallMap.get(dialog.getCallId().getCallId());
                         if (call != null) {
@@ -258,7 +271,8 @@ public class Connector implements SipListener, Runnable {
                     case Request.OPTIONS:
                         break;
                     case Request.INFO:
-                        System.out.println(timeStamp() + "RESPONSE 200OK FOR INFO -> " + responseEvent.getResponse());
+                        logger.info("RESPONSE 200OK FOR INFO RECIEVED: " + contactAddress);
+                        logger.debug("RESPONSE 200OK FOR INFO RECIEVED \n" + response);
                         call = activeCallMap.get(dialog.getCallId().getCallId());
                         if (call != null) {
                             call.handleStackResponse(response, cSeq, dialog);
@@ -266,44 +280,51 @@ public class Connector implements SipListener, Runnable {
                         }
                         break;
                     case Request.BYE:
-                        System.out.println(timeStamp() + "RESPONSE 200OK FOR BYE -> " + responseEvent.getResponse());
+                        logger.info("RESPONSE 200OK FOR BYE RECIEVED: " + contactAddress);
+                        logger.debug("RESPONSE 200OK FOR BYE RECIEVED \n" + response);
                         call = activeCallMap.get(dialog.getCallId().getCallId());
                         if (call != null) {
                             call.handleStackResponse(response, cSeq, dialog);
 
                         }
                         activeCallMap.remove(dialog.getCallId().getCallId());
-                        System.out.println(timeStamp() + "hashmap size -> " + activeCallMap.size());
+                        logger.info("HASHMAP SIZE: " + activeCallMap.size());
                         break;
                     case Request.CANCEL:
-                        System.out.println(timeStamp() + "RESPONSE 200OK FOR CANCEL -> " + responseEvent.getResponse());
-                        callMap.remove(dialog.getCallId().getCallId());
-                        System.out.println(timeStamp() + "hashmap size -> " + callMap.size());
+                        logger.info("RESPONSE 200OK FOR CANCEL RECIEVED: " + contactAddress);
+                        logger.debug("RESPONSE 200OK FOR CANCEL RECIEVED \n" + response);
+                        activeCallMap.remove(dialog.getCallId().getCallId());
+                        logger.info("HASHMAP SIZE: " + activeCallMap.size());
                         break;
                 }
                 break;
             case Response.TRYING:
-                System.out.println(timeStamp() + "RESPONSE 100 TRYING RECIEVED -> " + responseEvent.getResponse());
+                logger.info("RESPONSE 100 TRYING RECIEVED: " + contactAddress);
+                logger.debug("RESPONSE 100 TRYING RECIEVED \n" + response);
                 call = activeCallMap.get(dialog.getCallId().getCallId());
                 call.handleStackResponse(response, cSeq, dialog);
                 break;
             case Response.RINGING:
-                System.out.println(timeStamp() + "RESPONSE 180 RINGING RECIEVED -> " + responseEvent.getResponse());
+                logger.info("RESPONSE 180 RINGING RECIEVED: " + contactAddress);
+                logger.debug("RESPONSE 180 RINGING RECIEVED \n" + response);
                 call = activeCallMap.get(dialog.getCallId().getCallId());
                 if (call != null) {
                     call.handleStackResponse(response, cSeq, dialog);
                 }
                 break;
             case Response.BUSY_HERE:
-                System.out.println(timeStamp() + "RESPONSE BUSY HERE RECIEVED -> " + responseEvent.getResponse());
+                logger.info("RESPONSE BUSY HERE RECIEVED: " + contactAddress);
+                logger.debug("RESPONSE BUSY HERE RECIEVED \n" + response);
                 break;
             case Response.DECLINE:
-                System.out.println(timeStamp() + "RESPONSE DECLINE RECIEVED -> " + responseEvent.getResponse());
-                callMap.remove(dialog.getCallId().getCallId());
-                System.out.println(timeStamp() + "hashmap size -> " + callMap.size());
+                logger.info("RESPONSE DECLINE RECIEVED: " + contactAddress);
+                logger.debug("RESPONSE DECLINE RECIEVED \n" + response);
+                activeCallMap.remove(dialog.getCallId().getCallId());
+                logger.info("HASHMAP SIZE: " + activeCallMap.size());
                 break;
             case Response.REQUEST_TERMINATED:
-                System.out.println(timeStamp() + "RESPONSE REQUEST TERMINATED RECIEVED -> " + responseEvent.getResponse());
+                logger.info("RESPONSE REQUEST TERMINATED RECIEVED: " + contactAddress);
+                logger.debug("RESPONSE REQUEST TERMINATED RECIEVED \n" + response);
                 call.handleStackResponse(response, cSeq, dialog);
                 break;
         }
@@ -328,7 +349,8 @@ public class Connector implements SipListener, Runnable {
      * @param call
      */
     public void sendRequest(Request request, Call call) {
-        System.out.println("SEND " + request.getMethod() + " REQUEST -> " + request);
+        logger.info("SEND " + request.getMethod() + " REQUEST");
+        logger.debug("SEND " + request.getMethod() + " REQUEST -> " + request);
         Map<Request, Call> queueMap = new HashMap<>();
         try {
             Dialog dialog = call.getDialog();
@@ -344,10 +366,9 @@ public class Connector implements SipListener, Runnable {
                 queueMap.put(request, call);
                 try {
                     synchronized (m_synclock) {
-                        System.out.println("block code");
+                        logger.debug("WAIT FOR TRANSACTION TO COMPLETE");
                         m_synclock.wait(500);
-
-                        System.out.println("Wait over");
+                        logger.debug("WAIT OVER");
                         if (queueMap.size() > 0) {
                             Iterator it = queueMap.entrySet().iterator();
                             while (it.hasNext()) {
@@ -356,10 +377,9 @@ public class Connector implements SipListener, Runnable {
                                 it.remove();
                             }
                         }
-                        System.out.println("Unblock at sendRequest");
                     }
                 } catch (InterruptedException ex1) {
-                    logger.log(Level.SEVERE, null, ex1);
+                    logger.fatal(ex1.getMessage(), ex1);
                 }
             }
         }
@@ -372,15 +392,16 @@ public class Connector implements SipListener, Runnable {
      * @param dialog
      */
     public void sendAck(Request ackRequest, Dialog dialog) {
-        Call call = callMap.get(dialog.getCallId().getCallId());
+        Call call = activeCallMap.get(dialog.getCallId().getCallId());
         try {
             dialog.sendAck(ackRequest);
-            System.out.println("SEND ACK REQUEST -> " + ackRequest);
+            logger.info("SEND ACK REQUEST");
+            logger.debug("SEND ACK REQUEST \n" + ackRequest);
         } catch (SipException ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
         call.setRemoteTag(call.getDialog().getRemoteTag());
-        System.out.println("REMOTE TAG -> " + call.getDialog().getRemoteTag());
+        logger.debug("REMOTE TAG \n" + call.getDialog().getRemoteTag());
     }
 
     /**
@@ -398,44 +419,46 @@ public class Connector implements SipListener, Runnable {
                     case Response.OK:
                         switch (cSeq.getMethod()) {
                             case Request.BYE:
-                                System.out.println(timeStamp() + "Received Bye, sending OK");
-                                System.out.println("200 OK for BYE REQUEST -> " + response);
+                                logger.info("SEND OK FOR BYE");
+                                logger.debug("SEND 200 OK for BYE REQUEST \n" + response);
                                 st.sendResponse(response);
                                 activeCallMap.remove(call.getCallId());
                                 break;
                             case Request.INFO:
-                                System.out.println(timeStamp() + "Received Info, sending OK");
-                                System.out.println("200 OK for INFO REQUEST -> " + response);
+                                logger.info("SEND OK FOR INFO");
+                                logger.debug("SEND 200 OK for INFO REQUEST \n" + response);
                                 st.sendResponse(response);
                                 break;
                             case Request.CANCEL:
-                                System.out.println(timeStamp() + "Received Cancel, sending OK");
-                                System.out.println("200 OK for CANCEL REQUEST -> " + response);
+                                logger.info("SEND OK FOR CANCEL");
+                                logger.debug("SEND 200 OK for CANCEL REQUEST \n" + response);
                                 st.sendResponse(response);
                                 break;
                             case Request.INVITE:
-                                System.out.println(timeStamp() + "Sending 200 OK for invite");
-                                System.out.println("200 OK for INVITE REQUEST -> " + response);
+                                logger.info("SEND OK FOR INVITE");
+                                logger.debug("SEND 200 OK for INVITE REQUEST \n" + response);
                                 st.sendResponse(response);
                                 break;
                             case Request.OPTIONS:
-                                System.out.println(timeStamp() + "Sending 200 OK for options");
-                                System.out.println("200 OK for OPTIONS REQUEST -> " + response);
+                                logger.info("SEND OK FOR OPTIONS");
+                                logger.debug("SEND 200 OK for OPTIONS REQUEST \n" + response);
                                 st.sendResponse(response);
                                 break;
                         }
                         break;
                     case Response.TRYING:
-                        System.out.println("SENT 100 TRYING RESPONSE -> " + response);
+                        logger.info("SEND 100 TRYING");
+                        logger.debug("SEND 100 TRYING RESPONSE \n" + response);
                         st.sendResponse(response);
                         break;
                     case Response.RINGING:
-                        System.out.println("SENT 180 RINGING RESPONSE -> " + response);
+                        logger.info("SEND 180 RINGING");
+                        logger.debug("SEND 180 RINGING RESPONSE \n" + response);
                         st.sendResponse(response);
                         break;
                 }
             } catch (SipException | InvalidArgumentException ex) {
-                logger.log(Level.SEVERE, ex.getMessage(), ex);
+                logger.fatal(ex.getMessage(), ex);
             }
         }
     }
@@ -449,12 +472,13 @@ public class Connector implements SipListener, Runnable {
     public void sendTerminationAck(Request ackRequest, Dialog dialog) {
         try {
             dialog.sendAck(ackRequest);
-            System.out.println(" TERMINATION ACK -> " + ackRequest);
+            logger.info("TERMINATION ACK ");
+            logger.debug("TERMINATION ACK  \n" + ackRequest);
         } catch (SipException ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
-        callMap.remove(dialog.getCallId().getCallId());
-        System.out.println(timeStamp() + "hashmap size -> " + callMap.size());
+        activeCallMap.remove(dialog.getCallId().getCallId());
+        logger.info("HASHMAP SIZE: " + activeCallMap.size());
     }
 
     /**
@@ -471,8 +495,7 @@ public class Connector implements SipListener, Runnable {
      */
     @Override
     public void processTimeout(TimeoutEvent te) {
-        System.out.println(timeStamp() + "-> Process timeout");
-        System.out.println("Type of timeout -> " + te.getTimeout().getValue());
+        logger.info("Process Timeout");
     }
 
     /**
@@ -489,7 +512,7 @@ public class Connector implements SipListener, Runnable {
      */
     @Override
     public void processIOException(IOExceptionEvent ioee) {
-        System.out.println(timeStamp() + "-> IO Exception");
+        logger.info("IO Exception");
     }
 
     /**
@@ -505,7 +528,7 @@ public class Connector implements SipListener, Runnable {
      */
     @Override
     public void processTransactionTerminated(TransactionTerminatedEvent tte) {
-        System.out.println(timeStamp() + "-> Transaction Terminated");
+        logger.info("Transaction Terminated");
     }
 
     /**
@@ -522,7 +545,7 @@ public class Connector implements SipListener, Runnable {
      */
     @Override
     public void processDialogTerminated(DialogTerminatedEvent dte) {
-        System.out.println(timeStamp() + "-> Dialog Terminated");
+        logger.info("Dialog Terminated");
     }
 
     /**
@@ -562,7 +585,6 @@ public class Connector implements SipListener, Runnable {
 
     @Override
     public void run() {
-//        System.out.println("Starting a new thread followed by run method");
-//        System.out.println("Running thread ->" + Thread.currentThread().getId());
+        //do nothing
     }
 }

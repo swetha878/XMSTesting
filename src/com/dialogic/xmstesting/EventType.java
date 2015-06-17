@@ -18,5 +18,6 @@ public enum EventType {
     CONNECTED, // send ACK
     INFORESPONSE, // info response
     INFOREQUEST, // info request(terminate, dialog exit etc)
-    DISCONNECTED // hangup
+    DISCONNECTED, // hangup
+    CANCEL
 }

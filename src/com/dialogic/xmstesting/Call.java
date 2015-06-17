@@ -5,6 +5,7 @@
  */
 package com.dialogic.xmstesting;
 
+import static com.dialogic.xmstesting.Connector.logger;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.sip.ClientTransaction;
 import javax.sip.Dialog;
 import javax.sip.InvalidArgumentException;
@@ -38,6 +37,8 @@ import javax.sip.header.ViaHeader;
 import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * The call class maintaining the call functionalities.
@@ -46,7 +47,7 @@ import javax.sip.message.Response;
  */
 public class Call extends Observable {
 
-    static final Logger logger = Logger.getLogger(Call.class.getName());
+    static final Logger logger = LogManager.getLogger(Call.class.getName());
 
     Dialog dialog;
     private ServerTransaction servertransaction;
@@ -123,6 +124,8 @@ public class Call extends Observable {
                 setValue(ack);
                 break;
             case Request.CANCEL:
+                Event cancel = createRequestEvent(request, EventType.CANCEL);
+                setValue(cancel);
                 break;
             case Request.BYE:
                 Event bye = createRequestEvent(request, EventType.DISCONNECTED);
@@ -281,10 +284,10 @@ public class Call extends Observable {
 
             sipConnector.register(this);
             sipConnector.addToActiveMap(this.getCallId(), this);
-            System.out.println("CREATING AN INVITE REQUEST");
+            logger.info("CREATING AN INVITE REQUEST");
             sipConnector.sendRequest(request, this);
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -294,7 +297,7 @@ public class Call extends Observable {
      * @param response
      */
     public void createAckRequest(Response response) {
-        System.out.println("CREATING ACK REQUEST ");
+        logger.info("CREATING ACK REQUEST ");
         Request ackRequest;
         try {
             if (this.getDialog() != null) {
@@ -308,8 +311,8 @@ public class Call extends Observable {
                 Event eve = createResponseEvent(response, EventType.CONNECTED);
                 setValue(eve);
             }
-        } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+        } catch (InvalidArgumentException | SipException | ParseException ex) {
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -325,14 +328,14 @@ public class Call extends Observable {
             ContentTypeHeader contTypeHeader = headerFactory.createContentTypeHeader("application", "xml");
             infoRequest.addHeader(contTypeHeader);
 
-            System.out.println("REMOTE TAG -> " + this.getDialog().getRemoteTag());
+            logger.info("REMOTE TAG -> " + this.getDialog().getRemoteTag());
             msml = msml.replaceAll("conn:.*?\\\"", "conn:" + this.getDialog().getRemoteTag() + "\"");
             infoRequest.setContent(msml, contTypeHeader);
-            System.out.println("CREATING INFO REQUEST TO XMS");
+            logger.info("CREATING INFO REQUEST TO XMS");
             sipConnector.sendRequest(infoRequest, this);
 
         } catch (SipException | ParseException ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -343,13 +346,13 @@ public class Call extends Observable {
             ContentTypeHeader contTypeHeader = headerFactory.createContentTypeHeader("application", "xml");
             infoRequest.addHeader(contTypeHeader);
 
-            System.out.println("REMOTE TAG -> " + this.getDialog().getRemoteTag());
+            logger.info("REMOTE TAG -> " + this.getDialog().getRemoteTag());
             msml = msml.replaceAll("conn:.*?\\/", "conn:" + this.getDialog().getRemoteTag() + "\\/");
             infoRequest.setContent(msml, contTypeHeader);
-            System.out.println("CREATING INFO REQUEST TO XMS");
+            logger.info("CREATING INFO REQUEST TO XMS");
             sipConnector.sendRequest(infoRequest, this);
         } catch (SipException | ParseException ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -369,10 +372,10 @@ public class Call extends Observable {
             Address contactAddress = addressFactory.createAddress(contactUri);
             ContactHeader contactHeader = headerFactory.createContactHeader(contactAddress);
             infoOkResponse.addHeader(contactHeader);
-            System.out.println("CREATING INFO RESPONSE TO XMS");
+            logger.info("CREATING INFO RESPONSE TO XMS");
             sipConnector.sendResponse(infoOkResponse, this);
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -382,7 +385,7 @@ public class Call extends Observable {
      * @param request
      */
     public void createOptionsResponse(Request request) {
-        System.out.println("CREATING OPTIONS RESPONSE");
+        logger.info("CREATING OPTIONS RESPONSE");
         try {
             MessageFactory messageFactory = sipConnector.getMessageFactory();
             Response optionsResponse = messageFactory.createResponse(Response.OK, request);
@@ -391,7 +394,7 @@ public class Call extends Observable {
             sipConnector.sendResponse(optionsResponse, this);
             //this.setSdp(new String(request.getRawContent()));
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
 
     }
@@ -402,7 +405,7 @@ public class Call extends Observable {
      * @param request
      */
     public void createTryingResponse(Request request) {
-        System.out.println("CREATING 100 TRYING RESPONSE");
+        logger.info("CREATING 100 TRYING RESPONSE");
         try {
             MessageFactory messageFactory = sipConnector.getMessageFactory();
             Response tryingResponse = messageFactory.createResponse(Response.TRYING, request);
@@ -410,7 +413,7 @@ public class Call extends Observable {
             toHeader.setTag(Integer.toHexString(new Random().nextInt(0xffffff) + 0xffffff));
             sipConnector.sendResponse(tryingResponse, this);
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -420,7 +423,7 @@ public class Call extends Observable {
      * @param request
      */
     public void createRingingResponse(Request request) {
-        System.out.println("CREATING 180 RINGING RESPONSE");
+        logger.info("CREATING 180 RINGING RESPONSE");
         try {
             MessageFactory messageFactory = sipConnector.getMessageFactory();
             Response ringingResponse = messageFactory.createResponse(Response.RINGING, request);
@@ -428,7 +431,7 @@ public class Call extends Observable {
             toHeader.setTag(Integer.toHexString(new Random().nextInt(0xffffff) + 0xffffff));
             sipConnector.sendResponse(ringingResponse, this);
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -438,7 +441,7 @@ public class Call extends Observable {
      * @param request
      */
     public void createInviteOk(Request request) {
-        System.out.println("CREATING 200OK FOR INVITE");
+        logger.info("CREATING 200OK FOR INVITE");
         MessageFactory messageFactory = sipConnector.getMessageFactory();
         AddressFactory addressFactory = sipConnector.getAddressFactory();
         HeaderFactory headerFactory = sipConnector.getHeaderFactory();
@@ -465,7 +468,7 @@ public class Call extends Observable {
             //}
             sipConnector.sendResponse(okResponse, this);
         } catch (ParseException | InvalidArgumentException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.fatal(e.getMessage(), e);
         }
     }
 
@@ -475,10 +478,11 @@ public class Call extends Observable {
     public void createBye() {
         try {
             Request byeRequest = this.getDialog().createRequest(Request.BYE);
-            System.out.println("CREATE BYE REQUEST ->" + byeRequest);
+            logger.info("CREATE BYE REQUEST");
+            logger.debug("CREATE BYE REQUEST \n" + byeRequest);
             sipConnector.sendRequest(byeRequest, this);
         } catch (SipException ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -493,7 +497,7 @@ public class Call extends Observable {
             Response okResponse = messageFactory.createResponse(Response.OK, request);
             sipConnector.sendResponse(okResponse, this);
         } catch (ParseException ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -526,7 +530,7 @@ public class Call extends Observable {
 
             sipConnector.sendResponse(okResponse, this);
         } catch (ParseException | InvalidArgumentException ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -534,12 +538,12 @@ public class Call extends Observable {
      * Creates a CANCEL request.
      */
     public void createCancelRequest() {
-        System.out.println("CREATING CANCEL REQUEST");
+        logger.info("CREATING CANCEL REQUEST");
         try {
             Request cancelRequest = this.getClientTransaction().createCancel();
             sipConnector.sendRequest(cancelRequest, this);
         } catch (SipException ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -558,7 +562,7 @@ public class Call extends Observable {
             //Response requestTerminatedResponse = messageFactory.createResponse(Response.REQUEST_TERMINATED, call.getInviteRequest());
             //sipConnector.sendResponse(requestTerminatedResponse, this);
         } catch (ParseException ex) {
-            logger.log(Level.SEVERE, null, ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -573,7 +577,7 @@ public class Call extends Observable {
             ackRequest = dialog.createAck(((CSeqHeader) response.getHeader(CSeqHeader.NAME)).getSeqNumber());
             sipConnector.sendTerminationAck(ackRequest, dialog);
         } catch (InvalidArgumentException | SipException ex) {
-            logger.log(Level.SEVERE, null, ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -757,7 +761,7 @@ public class Call extends Observable {
             FromHeader frmHeader = headerFactory.createFromHeader(fromAddress, tagGenerator());
             fromHeadersMap.put(address, frmHeader);
         } catch (ParseException ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -774,7 +778,7 @@ public class Call extends Observable {
             ToHeader toHeader = headerFactory.createToHeader(toAddress, null);
             toHeadersMap.put(address, toHeader);
         } catch (ParseException ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -792,7 +796,7 @@ public class Call extends Observable {
             ContactHeader contactHeader = headerFactory.createContactHeader(contactAddress);
             contactHeadersMap.put(port, contactHeader);
         } catch (ParseException ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -806,7 +810,7 @@ public class Call extends Observable {
             ViaHeader viaHeader = headerFactory.createViaHeader(host, port, transport, branch);
             viaHeadersMap.put(port, viaHeader);
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
     }
 
@@ -820,7 +824,7 @@ public class Call extends Observable {
             ContentTypeHeader header = headerFactory.createContentTypeHeader(contentType, contentSubType);
             contentTypeHeaderMap.put(contentSubType, header);
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
 
     }
@@ -847,9 +851,8 @@ public class Call extends Observable {
             CSeqHeader cSeqHeader = headerFactory.createCSeqHeader(sequenceNumber, method);
             cSeqHeadersMap.put(method, cSeqHeader);
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            logger.fatal(ex.getMessage(), ex);
         }
-
     }
 
     public void addToWaitList() {
