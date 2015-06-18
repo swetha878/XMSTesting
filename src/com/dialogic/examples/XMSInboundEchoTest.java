@@ -28,29 +28,29 @@ public class XMSInboundEchoTest {
             MsmlCall call = new MsmlCall(connector);
             call.setFromAddress(Inet4Address.getLocalHost().getHostAddress());
 
-            XMSReturnCode result = call.waitCall();
+            XMSReturnCode result = call.Waitcall();
 
             System.out.println("RESULT call connected" + result);
 
-            XMSReturnCode recordResult = call.record("file://recorded/Test.wav");
+            XMSReturnCode recordResult = call.Record("file://recorded/Test.wav");
 
             System.out.println("RESULT record end" + recordResult);
 
-            XMSReturnCode dropResult = call.dropCall();
+            XMSReturnCode dropResult = call.Dropcall();
 
             System.out.println("RESULT drop call" + dropResult);
 
             String adr = call.getConnectionAddress();
 
-            XMSReturnCode makeResult = call.makeCall(adr);
+            XMSReturnCode makeResult = call.Makecall(adr);
 
             System.out.println("RESULT make call" + makeResult);
 
-            XMSReturnCode playResult = call.play("file://recorded/Test.wav");
+            XMSReturnCode playResult = call.Play("file://recorded/Test.wav");
 
             System.out.println("RESULT play end" + playResult);
 
-            call.dropCall();
+            call.Dropcall();
         } catch (Exception ex) {
             Logger.getLogger(XMSInboundEchoTest.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }

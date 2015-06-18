@@ -28,14 +28,16 @@ public class XMSInboundTest {
             MsmlCall call = new MsmlCall(connector);
             call.setFromAddress(Inet4Address.getLocalHost().getHostAddress());
 
-            XMSReturnCode result = call.waitCall();
+            XMSReturnCode result = call.Waitcall();
 
             System.out.println("WAIT CALL RESULT -> " + result);
 
-            XMSReturnCode playResult = call.play("file://verification/greeting.wav");
+            XMSReturnCode playResult = call.Play("file://verification/greeting.wav");
 
             System.out.println("PLAY RESULT -> " + playResult);
-            call.dropCall();
+
+            System.out.println("PLAY END REASON -> " + call.getLastEvent().getReason());
+            call.Dropcall();
         } catch (Exception ex) {
             Logger.getLogger(XMSInboundTest.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }

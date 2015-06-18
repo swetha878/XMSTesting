@@ -25,8 +25,8 @@ public class TestSuite {
 
         //new XMSInboundTest().start();
         //new XMSOutboundTest().start();
-        //new XMSInboundRecordTest().start();
-        new XMSInboundEchoTest().start();
+        new XMSInboundRecordTest().start();
+        //new XMSInboundEchoTest().start();
         //new XMSInboundNoAutoConnectTest().start();
         //new XMSMultipleInvites().start();
         //new XMSMultipleInboundTest().start();

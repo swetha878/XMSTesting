@@ -32,15 +32,15 @@ public class XMSOutboundTest {
 
             call.MakecallOptions.EnableACKOn200(false);
             call.MakecallOptions.EnableOKOnInfo(false);
-            XMSReturnCode result = call.makeCall(makecalldest);
+            XMSReturnCode result = call.Makecall(makecalldest);
 
             System.out.println("RESULT" + result);
 
-            XMSReturnCode playResult = call.play("file://verification/greeting.wav");
+            XMSReturnCode playResult = call.Play("file://verification/greeting.wav");
 
             System.out.println("RESULT" + playResult);
 
-            call.dropCall();
+            call.Dropcall();
         } catch (Exception ex) {
             Logger.getLogger(XMSOutboundTest.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }

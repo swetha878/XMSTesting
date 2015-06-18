@@ -30,5 +30,6 @@ public enum XMSCallState {
     REJECTED,
     SENDMESSAGE,
     SENDDTMF,
-    CONF
+    CONF,
+    CUSTOM
 }

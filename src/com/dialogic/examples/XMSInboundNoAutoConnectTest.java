@@ -29,23 +29,23 @@ public class XMSInboundNoAutoConnectTest {
             call.setFromAddress(Inet4Address.getLocalHost().getHostAddress());
             call.WaitcallOptions.EnableAutoConnect(false);
 
-            XMSReturnCode waitResult = call.waitCall();
+            XMSReturnCode waitResult = call.Waitcall();
 
             System.out.println("WAIT CALL RESULT -> " + waitResult);
 
-            XMSReturnCode acceptResult = call.acceptCall();
+            XMSReturnCode acceptResult = call.Acceptcall();
 
             System.out.println("ACCEPT CALL RESULT -> " + acceptResult);
 
-            XMSReturnCode answerResult = call.answerCall();
+            XMSReturnCode answerResult = call.Answercall();
 
             System.out.println("ANSWER CALL RESULT -> " + answerResult);
 
-            XMSReturnCode playResult = call.play("file://verification/greeting.wav");
+            XMSReturnCode playResult = call.Play("file://verification/greeting.wav");
 
             System.out.println("PLAY RESULT -> " + playResult);
 
-            call.dropCall();
+            call.Dropcall();
         } catch (Exception ex) {
             Logger.getLogger(XMSInboundNoAutoConnectTest.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }

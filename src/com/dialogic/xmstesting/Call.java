@@ -5,7 +5,6 @@
  */
 package com.dialogic.xmstesting;
 
-import static com.dialogic.xmstesting.Connector.logger;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;

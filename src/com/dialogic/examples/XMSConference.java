@@ -31,15 +31,15 @@ public class XMSConference {
             // factory creates the conference
             call1.createConf("conf1");
 
-            call1.waitCall();
+            call1.Waitcall();
             call1.add("conf1");
 
-            call2.waitCall();
+            call2.Waitcall();
             call2.add("conf1");
 
             Sleep(50000);
-            call1.dropCall();
-            call2.dropCall();
+            call1.Dropcall();
+            call2.Dropcall();
         } catch (Exception ex) {
             Logger.getLogger(XMSConference.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }

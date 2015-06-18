@@ -28,11 +28,11 @@ public class XMSDigitDetect {
             MsmlCall call = new MsmlCall(connector);
             call.setFromAddress(Inet4Address.getLocalHost().getHostAddress());
 
-            XMSReturnCode result = call.waitCall();
+            XMSReturnCode result = call.Waitcall();
 
             System.out.println("WAIT CALL RESULT -> " + result);
 
-            XMSReturnCode playResult = call.playCollect("file://verification/main_menu.wav");
+            XMSReturnCode playResult = call.PlayCollect("file://verification/main_menu.wav");
 
             System.out.println("PLAY RESULT -> " + playResult);
             //call.dropCall();

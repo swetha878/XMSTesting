@@ -22,7 +22,7 @@ import java.util.EnumMap;
  * @author dwolanski
  * @author chinck
  */
-public abstract class XMSCall {
+public abstract class XMSCall extends XMSObject {
 
 
     /* Logger information */
@@ -34,28 +34,28 @@ public abstract class XMSCall {
     private String m_connectionaddress = null;
     private String m_calledaddress = null;
     public XMSMakecallOptions MakecallOptions = new XMSMakecallOptions();
-//    public XMSUpdatecallOptions UpdatecallOptions = new XMSUpdatecallOptions();
+    //public XMSUpdatecallOptions UpdatecallOptions= new XMSUpdatecallOptions();
     public XMSWaitcallOptions WaitcallOptions = new XMSWaitcallOptions();
-//    public XMSAnswercallOptions AnswercallOptions = WaitcallOptions;
-//    public XMSAcceptcallOptions AcceptcallOptions = new XMSAcceptcallOptions();
-//    //public XMSAnswercallOptions AnswercallOptions = new XMSAnswercallOptions();  
-//    public XMSRecordOptions RecordOptions = new XMSRecordOptions();
-//    public XMSPlayOptions PlayOptions = new XMSPlayOptions();
-//    public XMSCollectDigitsOptions CollectDigitsOptions = new XMSCollectDigitsOptions();
-//    public XMSPlayCollectOptions PlayCollectOptions = new XMSPlayCollectOptions();
-//    public XMSPlayRecordOptions PlayRecordOptions = new XMSPlayRecordOptions();
-//    public XMSPlayPhraseOptions PlayPhraseOptions = new XMSPlayPhraseOptions();
-//    public XMSSendMessageOptions SendMessageOptions = new XMSSendMessageOptions();
-//    public XMSSendInfoOptions SendInfoOptions = new XMSSendInfoOptions();
+     //public XMSAnswercallOptions AnswercallOptions = WaitcallOptions;  
+    //public XMSAcceptcallOptions AcceptcallOptions = new XMSAcceptcallOptions();
+    //public XMSAnswercallOptions AnswercallOptions = new XMSAnswercallOptions();  
+    //public XMSRecordOptions RecordOptions = new XMSRecordOptions();
+    public XMSPlayOptions PlayOptions = new XMSPlayOptions();
+//     public XMSCollectDigitsOptions CollectDigitsOptions = new XMSCollectDigitsOptions();
+//     public XMSPlayCollectOptions PlayCollectOptions = new XMSPlayCollectOptions();
+//     public XMSPlayRecordOptions PlayRecordOptions = new XMSPlayRecordOptions();
+//     public XMSPlayPhraseOptions PlayPhraseOptions = new XMSPlayPhraseOptions();
+//     public XMSSendMessageOptions SendMessageOptions = new XMSSendMessageOptions();
+//     public XMSSendInfoOptions SendInfoOptions = new XMSSendInfoOptions();
 
     /**
      * CTor for the Object. Default takes no parms
      */
     public XMSCall() {
-        //m_Name = "XMSCall:" + m_objectcounter;
-        //PropertyConfigurator.configure("log4j.properties");
+        m_Name = "XMSCall:" + m_objectcounter;
+        PropertyConfigurator.configure("log4j.properties");
         //m_logger.setLevel(Level.ALL);
-        //m_logger.info("Creating " + m_Name);
+        m_logger.info("Creating " + m_Name);
         m_state = XMSCallState.NULL;
 
     }
@@ -73,8 +73,8 @@ public abstract class XMSCall {
     }
 
     protected void setConnectionAddress(String a_addr) {
-        //FunctionLogger logger = new FunctionLogger("setConnectionAddress", this, m_logger);
-        //logger.args(a_addr);
+        FunctionLogger logger = new FunctionLogger("setConnectionAddress", this, m_logger);
+        logger.args(a_addr);
         m_connectionaddress = a_addr;
     }
 
@@ -91,8 +91,8 @@ public abstract class XMSCall {
     }
 
     protected void setCalledAddress(String a_addr) {
-        //FunctionLogger logger = new FunctionLogger("setCalledAddress", this, m_logger);
-        //logger.args(a_addr);
+        FunctionLogger logger = new FunctionLogger("setCalledAddress", this, m_logger);
+        logger.args(a_addr);
         m_calledaddress = a_addr;
     }
 
@@ -106,8 +106,8 @@ public abstract class XMSCall {
     }
 
     protected void setCallType(XMSCallType a_type) {
-        //FunctionLogger logger = new FunctionLogger("setCallType", this, m_logger);
-        //logger.args(a_type);
+        FunctionLogger logger = new FunctionLogger("setCallType", this, m_logger);
+        logger.args(a_type);
         m_calltype = a_type;
     }
 
@@ -117,8 +117,7 @@ public abstract class XMSCall {
      * @return
      */
     public XMSCallState getState() {
-        return null;
-        //return m_state;
+        return m_state;
     }
 
     /**
@@ -130,13 +129,13 @@ public abstract class XMSCall {
      */
     // TODO Add in logic to check state.. ie can't Make a call while in a call etc
     protected XMSCallState setState(XMSCallState a_newState) {
-//        FunctionLogger logger = new FunctionLogger("setState", this, m_logger);
-//        logger.info("Setting state to " + a_newState + " (previous state = " + m_state + ")");
+        FunctionLogger logger = new FunctionLogger("setState", this, m_logger);
+        logger.info("Setting state to " + a_newState + " (previous state = " + m_state + ")");
         m_state = a_newState;
         return m_state;
     }
 
-    public XMSReturnCode makeCall(String dest) {
+    public XMSReturnCode Makecall(String dest) {
         //throw new UnsupportedOperationException("Not supported yet.");
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
@@ -147,7 +146,7 @@ public abstract class XMSCall {
      * @param a_othercall
      * @return
      */
-    public XMSReturnCode join(XMSCall a_othercall) {
+    public XMSReturnCode Join(XMSCall a_othercall) {
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
 
@@ -156,7 +155,7 @@ public abstract class XMSCall {
      *
      * @return
      */
-    public XMSReturnCode unJoin() {
+    public XMSReturnCode UnJoin() {
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
 
@@ -165,8 +164,8 @@ public abstract class XMSCall {
      *
      * @return
      */
-    public XMSReturnCode unRoute() {
-        return unJoin();
+    public XMSReturnCode UnRoute() {
+        return UnJoin();
     }
 
     /**
@@ -174,7 +173,7 @@ public abstract class XMSCall {
      *
      * @return
      */
-    public XMSReturnCode stop() {
+    public XMSReturnCode Stop() {
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
 
@@ -185,7 +184,7 @@ public abstract class XMSCall {
      * @param a_dest - URI for the destination
      * @return
      */
-    public XMSReturnCode redirect(String a_dest) {
+    public XMSReturnCode Redirect(String a_dest) {
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
 
@@ -195,7 +194,7 @@ public abstract class XMSCall {
      * @param a_dest - URI for the destination
      * @return
      */
-    public XMSReturnCode transfer(String a_dest) {
+    public XMSReturnCode Transfer(String a_dest) {
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
 
@@ -205,7 +204,7 @@ public abstract class XMSCall {
      * @param a_call - XMSCall Object of a connectd call
      * @return
      */
-    public XMSReturnCode transfer(XMSCall a_call) {
+    public XMSReturnCode Transfer(XMSCall a_call) {
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
 
@@ -215,8 +214,8 @@ public abstract class XMSCall {
      * @param a_othercall
      * @return
      */
-    public XMSReturnCode route(XMSCall a_othercall) {
-        return join(a_othercall);
+    public XMSReturnCode Route(XMSCall a_othercall) {
+        return Join(a_othercall);
     }
 
     /**
@@ -225,7 +224,7 @@ public abstract class XMSCall {
      * @param a_file
      * @return
      */
-    public XMSReturnCode record(String a_file) {
+    public XMSReturnCode Record(String a_file) {
 
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
@@ -237,7 +236,7 @@ public abstract class XMSCall {
      * @param recfile
      * @return
      */
-    public XMSReturnCode playRecord(String a_playfile, String recfile) {
+    public XMSReturnCode PlayRecord(String a_playfile, String recfile) {
 
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
@@ -248,11 +247,11 @@ public abstract class XMSCall {
      * @param a_file - File to be played
      * @return
      */
-    public XMSReturnCode play(String a_file) {
+    public XMSReturnCode Play(String a_file) {
 
         ArrayList<String> l_playlist = new ArrayList<String>();
         l_playlist.add(a_file);
-        return playList(l_playlist);
+        return PlayList(l_playlist);
     }
 
     /**
@@ -261,7 +260,7 @@ public abstract class XMSCall {
      * @param a_file - File to be played
      * @return
      */
-    public XMSReturnCode playList(ArrayList<String> a_playlist) {
+    public XMSReturnCode PlayList(ArrayList<String> a_playlist) {
 
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
@@ -272,7 +271,7 @@ public abstract class XMSCall {
      *
      * @return
      */
-    public XMSReturnCode dropCall() {
+    public XMSReturnCode Dropcall() {
 
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
@@ -282,7 +281,7 @@ public abstract class XMSCall {
      *
      * @return
      */
-    public XMSReturnCode waitCall() {
+    public XMSReturnCode Waitcall() {
 
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
@@ -292,7 +291,7 @@ public abstract class XMSCall {
      *
      * @return
      */
-    public XMSReturnCode answerCall() {
+    public XMSReturnCode Answercall() {
 
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
@@ -302,7 +301,7 @@ public abstract class XMSCall {
      *
      * @return
      */
-    public XMSReturnCode acceptCall() {
+    public XMSReturnCode Acceptcall() {
 
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
@@ -312,7 +311,7 @@ public abstract class XMSCall {
      *
      * @return
      */
-    public XMSReturnCode collectDigits() {
+    public XMSReturnCode CollectDigits() {
 
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
@@ -320,12 +319,12 @@ public abstract class XMSCall {
      * 
      */
 
-    public XMSReturnCode playCollect(String a_playfile) {
+    public XMSReturnCode PlayCollect(String a_playfile) {
         //TODO Is this better called PlayAndCollect or PlayAndCollectDigits
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
 
-    public XMSReturnCode updateCall() {
+    public XMSReturnCode Updatecall() {
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
 
@@ -336,16 +335,16 @@ public abstract class XMSCall {
      * @param a_phrase - The phrase to be spoken
      * @return
      */
-//    public XMSReturnCode PlayPhrase(XMSPlayPhraseType a_type, String a_phrase) {
-//        return XMSReturnCode.NOT_IMPLEMENTED;
-//    }
+//     public XMSReturnCode PlayPhrase(XMSPlayPhraseType a_type, String a_phrase){
+//         return XMSReturnCode.NOT_IMPLEMENTED;
+//     }
     /**
      * Play a period of silence
      *
      * @param a_duration - 0 – 36000 (in 100 ms units up to 1 hour)
      * @return
      */
-    public XMSReturnCode playSilence(int a_duration) {
+    public XMSReturnCode PlaySilence(int a_duration) {
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
 
@@ -355,7 +354,7 @@ public abstract class XMSCall {
      * @param a_message - String that is to be sent
      * @return
      */
-    public XMSReturnCode sendMessage(String a_message) {
+    public XMSReturnCode SendMessage(String a_message) {
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
 
@@ -366,7 +365,7 @@ public abstract class XMSCall {
      * @param a_dialstring - String that is to be sent
      * @return
      */
-    public XMSReturnCode sendDtmf(String a_dialstring) {
+    public XMSReturnCode SendDtmf(String a_dialstring) {
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
 
@@ -376,7 +375,7 @@ public abstract class XMSCall {
      * @param a_message - String that is to be sent
      * @return
      */
-    public XMSReturnCode sendInfo(String a_message) {
+    public XMSReturnCode SendInfo(String a_message) {
         return XMSReturnCode.NOT_IMPLEMENTED;
     }
 }

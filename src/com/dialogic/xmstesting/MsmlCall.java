@@ -7,8 +7,11 @@ package com.dialogic.xmstesting;
 
 import com.dialogic.clientLibrary.XMSCall;
 import com.dialogic.clientLibrary.XMSCallState;
+import com.dialogic.clientLibrary.XMSEvent;
+import com.dialogic.clientLibrary.XMSEventType;
 import com.dialogic.clientLibrary.XMSReturnCode;
 import java.io.FileInputStream;
+import java.io.StringReader;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.Observable;
@@ -19,19 +22,23 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.sip.address.Address;
 import javax.sip.header.FromHeader;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import nu.xom.Builder;
 import nu.xom.Document;
 import nu.xom.Element;
 import nu.xom.Elements;
+import org.xml.sax.InputSource;
 
 /**
  *
  * @author ssatyana
  */
 public class MsmlCall extends XMSCall implements Observer {
-    
+
     static final Logger logger = Logger.getLogger(MsmlCall.class.getName());
-    
+
     Call caller;
     Call msmlSip;
     Connector connector;
@@ -47,7 +54,7 @@ public class MsmlCall extends XMSCall implements Observer {
     private static String connectionAddress;
     Call conf;
     static int counter = 0;
-    
+
     public MsmlCall(Connector connector) {
         try {
             //this.connector = new Connector(Inet4Address.getLocalHost().getHostAddress(), 5070);
@@ -57,9 +64,9 @@ public class MsmlCall extends XMSCall implements Observer {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
         }
     }
-    
+
     @Override
-    public XMSReturnCode waitCall() {
+    public XMSReturnCode Waitcall() {
         try {
             caller = new Call(this.connector);
             caller.addObserver(this);
@@ -77,19 +84,18 @@ public class MsmlCall extends XMSCall implements Observer {
         }
         return XMSReturnCode.SUCCESS;
     }
-    
+
     public XMSReturnCode waitCallAsyn() {
         caller = new Call(this.connector);
-        System.out.println(caller);
         caller.addObserver(this);
         callMode = CallMode.INBOUND;
         m_state = XMSCallState.WAITCALL;
         caller.addToWaitList();
         return XMSReturnCode.SUCCESS;
     }
-    
+
     @Override
-    public XMSReturnCode makeCall(String dest) {
+    public XMSReturnCode Makecall(String dest) {
         try {
             m_state = XMSCallState.MAKECALL;
             if (!dest.isEmpty()) {
@@ -116,7 +122,7 @@ public class MsmlCall extends XMSCall implements Observer {
                     msmlSip.setOKOnInfo(Boolean.FALSE);
                 }
                 msmlSip.createInviteRequest(msmlSip.getToUser(), msmlSip.getToAddress());
-                
+
                 if (caller == null) {
                     synchronized (m_synclock) {
                         while (!isBlocked) {
@@ -138,9 +144,9 @@ public class MsmlCall extends XMSCall implements Observer {
         }
         return XMSReturnCode.SUCCESS;
     }
-    
+
     @Override
-    public XMSReturnCode acceptCall() {
+    public XMSReturnCode Acceptcall() {
         try {
             if (caller != null) {
                 caller.createRingingResponse(caller.getInviteRequest());
@@ -158,9 +164,9 @@ public class MsmlCall extends XMSCall implements Observer {
         }
         return XMSReturnCode.SUCCESS;
     }
-    
+
     @Override
-    public XMSReturnCode answerCall() {
+    public XMSReturnCode Answercall() {
         try {
             if (caller != null) {
                 caller.createInviteOk(caller.getInviteRequest());
@@ -178,9 +184,9 @@ public class MsmlCall extends XMSCall implements Observer {
         }
         return XMSReturnCode.SUCCESS;
     }
-    
+
     @Override
-    public XMSReturnCode dropCall() {
+    public XMSReturnCode Dropcall() {
         try {
             if (caller != null && msmlSip != null) {
                 isDropCall = true;
@@ -203,9 +209,9 @@ public class MsmlCall extends XMSCall implements Observer {
         }
         return XMSReturnCode.SUCCESS;
     }
-    
+
     @Override
-    public XMSReturnCode play(String filename) {
+    public XMSReturnCode Play(String filename) {
         try {
             if (msmlSip != null && filename != null) {
                 msmlSip.sendInfo(buildPlayMsml(filename));
@@ -224,6 +230,7 @@ public class MsmlCall extends XMSCall implements Observer {
                         isBlocked = false;
                         m_state = XMSCallState.PLAY_END;
                     }
+
                 }
             }
         } catch (Exception ex) {
@@ -231,9 +238,9 @@ public class MsmlCall extends XMSCall implements Observer {
         }
         return XMSReturnCode.SUCCESS;
     }
-    
+
     @Override
-    public XMSReturnCode record(String filename) {
+    public XMSReturnCode Record(String filename) {
         try {
             if (msmlSip != null && filename != null) {
                 msmlSip.sendInfo(buildRecordMsml(filename, 10));
@@ -259,7 +266,7 @@ public class MsmlCall extends XMSCall implements Observer {
         }
         return XMSReturnCode.SUCCESS;
     }
-    
+
     public XMSReturnCode createConf(String name) {
         try {
             if (msmlSip == null) {
@@ -292,13 +299,13 @@ public class MsmlCall extends XMSCall implements Observer {
 //                    }
                 }
             }
-            
+
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
         }
         return XMSReturnCode.SUCCESS;
     }
-    
+
     public XMSReturnCode add(String name) {
         try {
             if (msmlSip != null && name != null) {
@@ -322,9 +329,9 @@ public class MsmlCall extends XMSCall implements Observer {
         }
         return XMSReturnCode.SUCCESS;
     }
-    
+
     @Override
-    public XMSReturnCode playCollect(String filename) {
+    public XMSReturnCode PlayCollect(String filename) {
         try {
             if (msmlSip != null && filename != null) {
                 msmlSip.sendInfo(buildPlayCollectMsml(filename));
@@ -347,11 +354,11 @@ public class MsmlCall extends XMSCall implements Observer {
         }
         return XMSReturnCode.SUCCESS;
     }
-    
+
     @Override
-    public XMSReturnCode collectDigits() {
+    public XMSReturnCode CollectDigits() {
         try {
-            
+
             if (msmlSip != null) {
                 //msmlSip.
             }
@@ -360,21 +367,21 @@ public class MsmlCall extends XMSCall implements Observer {
         }
         return XMSReturnCode.SUCCESS;
     }
-    
+
     public String getFromAddress() {
         return this.fromAddr;
     }
-    
+
     public void setFromAddress(String fromAddress) {
         this.fromAddr = fromAddress;
     }
-    
+
     @Override
     public void update(Observable o, Object o1) {
         Event e = (Event) o1;
         if (e.getType().equals(EventType.INCOMING)) {
             if (this.callMode == CallMode.INBOUND) {
-                
+
                 FromHeader fromHeader = (FromHeader) e.getReq().getHeader("From");
                 Address reqToAddress = fromHeader.getAddress();
                 String incomingAdr = reqToAddress.toString();
@@ -384,20 +391,20 @@ public class MsmlCall extends XMSCall implements Observer {
                     String event = m.group(1);
                     setConnectionAddress(event);
                 }
-                makeCall("");
+                Makecall("");
             } else if (this.callMode == CallMode.OUTBOUND) {
             }
         } else if (e.getType().equals(EventType.RINGING)) {
             if (this.callMode == CallMode.INBOUND) {
                 if (WaitcallOptions.m_autoConnectEnabled) {
-                    acceptCall();
+                    Acceptcall();
                 } else {
                     synchronized (m_synclock) {
                         isBlocked = true;
                         m_synclock.notifyAll();
                     }
                 }
-                
+
             } else if (this.callMode == CallMode.OUTBOUND) {
             }
         } else if (e.getType().equals(EventType.CONNECTING)) {
@@ -406,7 +413,7 @@ public class MsmlCall extends XMSCall implements Observer {
                     if (caller.getLocalSdp() == null) {
                         caller.setLocalSdp(msmlSip.getRemoteSdp());
                     }
-                    answerCall();
+                    Answercall();
                 } else {
                     synchronized (m_synclock) {
                         isBlocked = true;
@@ -419,7 +426,7 @@ public class MsmlCall extends XMSCall implements Observer {
                     caller.createAckRequest(e.getRes());
                 } else if (caller == null) {
                     if (callerToAdr != msmlSip.getToAddress()) {
-                        makeCall(callerToUserId + "@" + callerToAdr);
+                        Makecall(callerToUserId + "@" + callerToAdr);
                     }
                 }
             } else {
@@ -446,14 +453,17 @@ public class MsmlCall extends XMSCall implements Observer {
                 }
             }
         } else if (e.getType().equals(EventType.INFORESPONSE)) {
-            if (m_state != XMSCallState.DISCONNECTED) {
-                String reponseMessage = new String(e.getRes().getRawContent());
-                
+            String reponseMessage = new String(e.getRes().getRawContent());
+            if (m_state != XMSCallState.CUSTOM) {
+                XMSEvent xmsEvent = new XMSEvent();
+                xmsEvent.CreateEvent(XMSEventType.CALL_CUSTOM, this, "", "", reponseMessage);
+                setLastEvent(xmsEvent);
+            } else if (m_state != XMSCallState.DISCONNECTED) {
                 Pattern pattern = Pattern.compile("response=\\\"(.*?)\\\"");
                 Matcher m = pattern.matcher(reponseMessage);
                 if (m.find()) {
                     String event = m.group(1);
-                    
+
                     if (Long.parseLong(event) == 200) {
                         System.out.println("Response 200 received");
                         mediaStatusCode = Integer.parseInt(event);
@@ -471,44 +481,106 @@ public class MsmlCall extends XMSCall implements Observer {
             if (!MakecallOptions.m_OKOnInfoEnabled) {
                 msmlSip.createInfoResponse(e.getReq());
             }
-            
             String info = new String(e.getReq().getRawContent());
-            String name = null;
-            Pattern eventPattern = Pattern.compile("name=\\\".*?\\\"");
-            Matcher eventMatcher = eventPattern.matcher(info);
-            if (eventMatcher.find()) {
-                String event = eventMatcher.group(0);
-                Pattern p = Pattern.compile("\\\"(.*?)\\\"");
-                Matcher matcher = p.matcher(event);
-                if (matcher.find()) {
-                    name = matcher.group(1);
-                }
-            }
-            if (name != null && name.equalsIgnoreCase("msml.dialog.exit")) {
-                if (m_state != XMSCallState.DISCONNECTED) {
-                    synchronized (m_synclock) {
-                        isBlocked = true;
-                        
-                        Pattern dialogPattern = Pattern.compile("dialog:(.*?)\\\"");
-                        Matcher dialogMatcher = dialogPattern.matcher(info);
-                        String dialogType = null;
-                        if (dialogMatcher.find()) {
-                            dialogType = dialogMatcher.group(1);
-                        }
-                        if (dialogType != null) {
-                            if (dialogType.equals("Play")) {
-                                m_state = XMSCallState.PLAY_END;
-                            } else if (dialogType.equals("Record")) {
-                                m_state = XMSCallState.RECORD_END;
-                            }
-                        }
-                        m_synclock.notifyAll();
+            if (m_state != XMSCallState.CUSTOM) {
+                XMSEvent xmsEvent = new XMSEvent();
+                xmsEvent.CreateEvent(XMSEventType.CALL_CUSTOM, this, "", "", info);
+                setLastEvent(xmsEvent);
+            } else {
+                String name = null;
+                Pattern eventPattern = Pattern.compile("name=\\\".*?\\\"");
+                Matcher eventMatcher = eventPattern.matcher(info);
+                if (eventMatcher.find()) {
+                    String eventName = eventMatcher.group(0);
+                    Pattern namePattern = Pattern.compile("\\\"(.*?)\\\"");
+                    Matcher nameMatcher = namePattern.matcher(eventName);
+                    if (nameMatcher.find()) {
+                        name = nameMatcher.group(1);
                     }
-                } else {
-                    msmlSip.createBye();
                 }
-            } else if (name != null && name.equalsIgnoreCase("detect")) {
-                
+                if (name != null && name.equalsIgnoreCase("moml.exit")) {
+                    Pattern dialogPattern = Pattern.compile("dialog:(.*?)\\\"");
+                    Matcher dialogMatcher = dialogPattern.matcher(info);
+                    String dialogType = null;
+                    if (dialogMatcher.find()) {
+                        dialogType = dialogMatcher.group(1);
+                    }
+                    if (dialogType != null) {
+                        if (dialogType.equals("Play")) {
+                            String reason = "";
+                            String amt = "";
+                            Pattern event = Pattern.compile("<name>(.+?)</name><value>(.+?)</value>");
+                            Matcher matcher = event.matcher(info);
+                            String nameType;
+                            String valueType;
+                            while (matcher.find()) {
+                                nameType = matcher.group(1);
+                                valueType = matcher.group(2);
+                                System.out.println("Testing 1->" + matcher.group(1));
+                                System.out.println("Testing 2->" + matcher.group(2));
+                                if (nameType.equalsIgnoreCase("play.amt")) {
+                                    amt = valueType;
+                                } else if (nameType.equalsIgnoreCase("play.end")) {
+                                    reason = valueType;
+                                }
+                            }
+                            XMSEvent xmsEvent = new XMSEvent();
+                            xmsEvent.CreateEvent(XMSEventType.CALL_PLAY_END, this, amt, reason, info);
+                            xmsEvent.setReason(reason);
+                            xmsEvent.setInternalData(info);
+                            setLastEvent(xmsEvent);
+                        } else if (dialogType.equals("Record")) {
+                            String reason = "";
+                            String len = "";
+                            Pattern event = Pattern.compile("<name>(.+?)</name><value>(.+?)</value>");
+                            Matcher matcher = event.matcher(info);
+                            String nameType;
+                            String valueType;
+                            while (matcher.find()) {
+                                nameType = matcher.group(1);
+                                valueType = matcher.group(2);
+                                System.out.println("Testing 1->" + matcher.group(1));
+                                System.out.println("Testing 2->" + matcher.group(2));
+                                if (nameType.equalsIgnoreCase("record.len")) {
+                                    len = valueType;
+                                } else if (nameType.equalsIgnoreCase("record.end")) {
+                                    reason = valueType;
+                                }
+                            }
+                            XMSEvent xmsEvent = new XMSEvent();
+                            xmsEvent.CreateEvent(XMSEventType.CALL_RECORD_END, this, len, reason, info);
+                            xmsEvent.setReason(reason);
+                            xmsEvent.setInternalData(info);
+                            setLastEvent(xmsEvent);
+                        }
+                    }
+                }
+                if (name != null && name.equalsIgnoreCase("msml.dialog.exit")) {
+                    if (m_state != XMSCallState.DISCONNECTED) {
+                        synchronized (m_synclock) {
+                            isBlocked = true;
+
+                            Pattern dialogPattern = Pattern.compile("dialog:(.*?)\\\"");
+                            Matcher dialogMatcher = dialogPattern.matcher(info);
+                            String dialogType = null;
+                            if (dialogMatcher.find()) {
+                                dialogType = dialogMatcher.group(1);
+                            }
+                            if (dialogType != null) {
+                                if (dialogType.equals("Play")) {
+                                    m_state = XMSCallState.PLAY_END;
+                                } else if (dialogType.equals("Record")) {
+                                    m_state = XMSCallState.RECORD_END;
+                                }
+                            }
+                            m_synclock.notifyAll();
+                        }
+                    } else {
+                        msmlSip.createBye();
+                    }
+                } else if (name != null && name.equalsIgnoreCase("detect")) {
+
+                }
             }
         } else if (e.getType().equals(EventType.DISCONNECTED)) {
             if (e.getCall() == msmlSip) {
@@ -564,7 +636,7 @@ public class MsmlCall extends XMSCall implements Observer {
                 msmlSip.createCancelRequest();
                 caller.createCancelResponse(e.getReq());
             }
-            
+
         }
     }
 
@@ -575,27 +647,31 @@ public class MsmlCall extends XMSCall implements Observer {
                 + "<dialogstart target=\"conn:1234\" type=\"application/moml+xml\" name=\"Play\">\n"
                 + "	<play >\n"
                 + "		<audio uri=\"" + fileName + "\" />\n"
+                + "		<playexit>\n"
+                + "		<exit namelist = \"play.end play.amt\"/>\n"
+                + "		</playexit>\n"
                 + "	</play>\n"
                 + "</dialogstart>\n"
                 + "</msml>";
         return msml;
-        
+
     }
-    
+
     private static String buildRecordMsml(String filename, int time) {
         String msml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
                 + "<msml version=\"1.1\">\n"
                 + "<dialogstart target=\"conn:1234\" type=\"application/moml+xml\" name=\"Record\">\n"
                 + "	<record beep=\"true\" dest=\"" + filename + "\" format=\"audio/wav\" maxtime=\"" + time + "s\">\n"
                 + "		<recordexit>\n"
-                + "			<send target=\"group\" event=\"terminate\"/>\n"
+                //+ "			<send target=\"group\" event=\"terminate\"/>\n"
+                + "		<exit namelist = \"record.end record.len\"/>\n"
                 + "		</recordexit>\n"
                 + "	</record>\n"
                 + "</dialogstart>\n"
                 + "</msml>";
         return msml;
     }
-    
+
     private static String buildDialogExit(String type) {
         String msml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
                 + "<msml version=\"1.1\">\n"
@@ -603,7 +679,7 @@ public class MsmlCall extends XMSCall implements Observer {
                 + "</msml>";
         return msml;
     }
-    
+
     private static String buildConfMsml(String name) {
         String msml = "<msml version=\"1.1\">\n"
                 + "<createconference name=\"" + name + "\" deletewhen=\"nocontrol\" mark=\"1\" term=\"true\">\n"
@@ -612,7 +688,7 @@ public class MsmlCall extends XMSCall implements Observer {
                 + "</msml>";
         return msml;
     }
-    
+
     private static String buildConfVideoMsml(String name) {
         String msml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
                 + "<msml version=\"1.1\">\n"
@@ -628,7 +704,7 @@ public class MsmlCall extends XMSCall implements Observer {
                 + "</msml>";
         return msml;
     }
-    
+
     private static String buildJoinConfMsml(String name) {
         String msml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
                 + "<msml version=\"1.1\">\n"
@@ -638,7 +714,7 @@ public class MsmlCall extends XMSCall implements Observer {
                 + "</msml>";
         return msml;
     }
-    
+
     private static String buildJoinConfVideoMsml(String name) {
         String msml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
                 + "<msml version=\"1.1\">\n"
@@ -650,14 +726,14 @@ public class MsmlCall extends XMSCall implements Observer {
                 + "</msml>";
         return msml;
     }
-    
+
     private static String buildDestroyConfMsml(String name) {
         String msml = "<msml version=\"1.1\">\n"
                 + "<destroyconference id=\"conf:" + name + "\" mark=\"1\" />\n"
                 + "</msml>";
         return msml;
     }
-    
+
     private static String buildPlayCollectMsml(String filename) {
         String msml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
                 + "<msml version=\"1.1\">\n"
@@ -688,12 +764,12 @@ public class MsmlCall extends XMSCall implements Observer {
                 + "</msml>";
         return msml;
     }
-    
+
     private static String buildCollectDigit() {
         String msml = "";
         return msml;
     }
-    
+
     private void setXMSInfo(Call c) {
         try {
             FileInputStream xmlFile = new FileInputStream("ConnectorConfig.xml");
@@ -707,7 +783,7 @@ public class MsmlCall extends XMSCall implements Observer {
                 }
                 if (element.getLocalName().equals("xmsAddress")) {
                     c.setToAddress(element.getValue());
-                    
+
                 }
             }
         } catch (Exception ex) {
@@ -715,7 +791,7 @@ public class MsmlCall extends XMSCall implements Observer {
                     .getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
     public void setAckOn200(Boolean value) {
         this.isACKOn200 = value;
     }
@@ -733,7 +809,7 @@ public class MsmlCall extends XMSCall implements Observer {
     public void setConnectionAddress(String aConnectionAddress) {
         connectionAddress = aConnectionAddress;
     }
-    
+
     private String getNullSdp() {
         String sdp = "v=0 \n"
                 + "o=test 53655765 2353687637 IN IP4 0.0.0.0 \n"
@@ -742,5 +818,11 @@ public class MsmlCall extends XMSCall implements Observer {
                 + "t=0 0";
         return sdp;
     }
-    
+
+    public void sendCustomScript(String msml) {
+        if (msmlSip != null && msml != null) {
+            m_state = XMSCallState.CUSTOM;
+            msmlSip.sendInfo(msml);
+        }
+    }
 }

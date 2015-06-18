@@ -5,6 +5,8 @@
  */
 package com.dialogic.xmstesting;
 
+import com.dialogic.clientLibrary.XMSConnector;
+import com.dialogic.clientLibrary.XMSReturnCode;
 import gov.nist.javax.sip.header.CSeq;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -56,7 +58,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author ssatyana
  */
-public class Connector implements SipListener, Runnable {
+public class Connector extends XMSConnector implements SipListener, Runnable {
 
     static final Logger logger = LogManager.getLogger(Connector.class.getName());
 
@@ -78,7 +80,7 @@ public class Connector implements SipListener, Runnable {
     static private List<Call> waitCallList = new ArrayList();
     static private Map<String, Call> activeCallMap = new HashMap<>();
     private final Object m_synclock = new Object();
-    //ExecutorService executor = Executors.newFixedThreadPool(100);
+    ExecutorService executor = Executors.newFixedThreadPool(25);
 
     /**
      * Creates the sip stack, sip provider and factories for
@@ -95,10 +97,10 @@ public class Connector implements SipListener, Runnable {
             properties = new Properties();
             properties.setProperty("javax.sip.STACK_NAME", "SipCall");
             properties.setProperty("javax.sip.IP_ADDRESS", myIpAddress);
-            properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "32");
+            //properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "32");
 
-            properties.setProperty("gov.nist.javax.sip.SERVER_LOG", "SipCall.txt");
-            properties.setProperty("gov.nist.javax.sip.DEBUG_LOG", "SipCall.log");
+            //properties.setProperty("gov.nist.javax.sip.SERVER_LOG", "SipCall.txt");
+            //properties.setProperty("gov.nist.javax.sip.DEBUG_LOG", "SipCall.log");
         }
         try {
             if (sipStack == null) {
@@ -162,8 +164,10 @@ public class Connector implements SipListener, Runnable {
         }
         switch (request.getMethod()) {
             case Request.INVITE:
-                logger.info("INVITE RECIEVED: " + contactAddress);
-                logger.debug("INVITE RECIEVED \n" + request);
+//                logger.info("INVITE RECIEVED: " + contactAddress);
+//                logger.debug("INVITE RECIEVED \n" + request);
+
+                System.out.println(timeStamp() + "INVITE RECIEVED -> " + request);
 
                 call = activeCallMap.get(CallId);
                 if (call != null) {
@@ -178,8 +182,8 @@ public class Connector implements SipListener, Runnable {
                             c1.setServerTransaction(serverTransaction);
                             activeCallMap.put(CallId, c1);
                             waitCallList.remove(c1);
-                            //executor.execute(new RequestProcessingThread(requestEvent, c1));
-                            c1.handleStackRequest(requestEvent);
+                            executor.execute(new RequestProcessingThread(requestEvent, c1));
+                            //c1.handleStackRequest(requestEvent);
                         }
                     } else {
                         // send 486, no call available
@@ -189,8 +193,10 @@ public class Connector implements SipListener, Runnable {
 
                 break;
             case Request.OPTIONS:
-                logger.info("OPTIONS RECIEVED");
-                logger.debug("OPTIONS RECIEVED \n" + request);
+//                logger.info("OPTIONS RECIEVED");
+//                logger.debug("OPTIONS RECIEVED \n" + request);
+
+                System.out.println(timeStamp() + "OPTIONS RECIEVED -> " + request);
                 if (waitCallList.size() > 0) {
                     Call c1 = waitCallList.get(0);
                     c1.setServerTransaction(serverTransaction);
@@ -198,23 +204,29 @@ public class Connector implements SipListener, Runnable {
                 }
                 break;
             case Request.INFO:
-                logger.info("INFO RECIEVED: " + contactAddress);
-                logger.debug("INFO RECIEVED \n" + request);
+//                logger.info("INFO RECIEVED: " + contactAddress);
+//                logger.debug("INFO RECIEVED \n" + request);
+
+                System.out.println(timeStamp() + "INFO RECIEVED -> " + request);
                 call = activeCallMap.get(requestEvent.getDialog().getCallId().getCallId());
                 call.setServerTransaction(serverTransaction);
                 call.handleStackRequest(requestEvent);
                 break;
             case Request.ACK:
-                logger.info("ACK RECIEVED: " + contactAddress);
-                logger.debug("ACK RECIEVED \n" + request);
+//                logger.info("ACK RECIEVED: " + contactAddress);
+//                logger.debug("ACK RECIEVED \n" + request);
+
+                System.out.println(timeStamp() + "ACK RECIEVED -> " + request);
                 call = activeCallMap.get(requestEvent.getDialog().getCallId().getCallId());
                 call.setDialog(requestEvent.getDialog());
                 call.setServerTransaction(serverTransaction);
                 call.handleStackRequest(requestEvent);
                 break;
             case Request.BYE:
-                logger.info("BYE RECIEVED: " + contactAddress);
-                logger.debug("BYE RECIEVED \n" + request);
+//                logger.info("BYE RECIEVED: " + contactAddress);
+//                logger.debug("BYE RECIEVED \n" + request);
+
+                System.out.println(timeStamp() + "BYE RECIEVED -> " + request);
                 call = activeCallMap.get(requestEvent.getDialog().getCallId().getCallId());
                 if (call != null) {
                     call.setServerTransaction(serverTransaction);
@@ -223,8 +235,10 @@ public class Connector implements SipListener, Runnable {
                 }
                 break;
             case Request.CANCEL:
-                logger.info("CANCEL RECIEVED: " + contactAddress);
-                logger.debug("CANCEL RECIEVED \n" + request);
+//                logger.info("CANCEL RECIEVED: " + contactAddress);
+//                logger.debug("CANCEL RECIEVED \n" + request);
+
+                System.out.println(timeStamp() + "CANCEL RECIEVED -> " + request);
                 call = activeCallMap.get(requestEvent.getDialog().getCallId().getCallId());
 
                 call.setServerTransaction(serverTransaction);
@@ -259,8 +273,10 @@ public class Connector implements SipListener, Runnable {
             case Response.OK:
                 switch (cSeq.getMethod()) {
                     case Request.INVITE:
-                        logger.info("RESPONSE 200OK FOR INVITE RECIEVED: " + contactAddress);
-                        logger.debug("RESPONSE 200OK FOR INVITE RECIEVED \n" + response);
+//                        logger.info("RESPONSE 200OK FOR INVITE RECIEVED: " + contactAddress);
+//                        logger.debug("RESPONSE 200OK FOR INVITE RECIEVED \n" + response);
+
+                        System.out.println(timeStamp() + "RESPONSE 200OK FOR INVITE -> " + responseEvent.getResponse());
                         call.setDialog(dialog);
                         call = activeCallMap.get(dialog.getCallId().getCallId());
                         if (call != null) {
@@ -271,8 +287,10 @@ public class Connector implements SipListener, Runnable {
                     case Request.OPTIONS:
                         break;
                     case Request.INFO:
-                        logger.info("RESPONSE 200OK FOR INFO RECIEVED: " + contactAddress);
-                        logger.debug("RESPONSE 200OK FOR INFO RECIEVED \n" + response);
+//                        logger.info("RESPONSE 200OK FOR INFO RECIEVED: " + contactAddress);
+//                        logger.debug("RESPONSE 200OK FOR INFO RECIEVED \n" + response);
+
+                        System.out.println(timeStamp() + "RESPONSE 200OK FOR INFO -> " + responseEvent.getResponse());
                         call = activeCallMap.get(dialog.getCallId().getCallId());
                         if (call != null) {
                             call.handleStackResponse(response, cSeq, dialog);
@@ -280,8 +298,10 @@ public class Connector implements SipListener, Runnable {
                         }
                         break;
                     case Request.BYE:
-                        logger.info("RESPONSE 200OK FOR BYE RECIEVED: " + contactAddress);
-                        logger.debug("RESPONSE 200OK FOR BYE RECIEVED \n" + response);
+//                        logger.info("RESPONSE 200OK FOR BYE RECIEVED: " + contactAddress);
+//                        logger.debug("RESPONSE 200OK FOR BYE RECIEVED \n" + response);
+
+                        System.out.println(timeStamp() + "RESPONSE 200OK FOR BYE -> " + responseEvent.getResponse());
                         call = activeCallMap.get(dialog.getCallId().getCallId());
                         if (call != null) {
                             call.handleStackResponse(response, cSeq, dialog);
@@ -291,22 +311,28 @@ public class Connector implements SipListener, Runnable {
                         logger.info("HASHMAP SIZE: " + activeCallMap.size());
                         break;
                     case Request.CANCEL:
-                        logger.info("RESPONSE 200OK FOR CANCEL RECIEVED: " + contactAddress);
-                        logger.debug("RESPONSE 200OK FOR CANCEL RECIEVED \n" + response);
+//                        logger.info("RESPONSE 200OK FOR CANCEL RECIEVED: " + contactAddress);
+//                        logger.debug("RESPONSE 200OK FOR CANCEL RECIEVED \n" + response);
+
+                        System.out.println(timeStamp() + "RESPONSE 200OK FOR CANCEL -> " + responseEvent.getResponse());
                         activeCallMap.remove(dialog.getCallId().getCallId());
                         logger.info("HASHMAP SIZE: " + activeCallMap.size());
                         break;
                 }
                 break;
             case Response.TRYING:
-                logger.info("RESPONSE 100 TRYING RECIEVED: " + contactAddress);
-                logger.debug("RESPONSE 100 TRYING RECIEVED \n" + response);
+//                logger.info("RESPONSE 100 TRYING RECIEVED: " + contactAddress);
+//                logger.debug("RESPONSE 100 TRYING RECIEVED \n" + response);
+
+                System.out.println(timeStamp() + "RESPONSE 100 TRYING RECIEVED -> " + responseEvent.getResponse());
                 call = activeCallMap.get(dialog.getCallId().getCallId());
                 call.handleStackResponse(response, cSeq, dialog);
                 break;
             case Response.RINGING:
-                logger.info("RESPONSE 180 RINGING RECIEVED: " + contactAddress);
-                logger.debug("RESPONSE 180 RINGING RECIEVED \n" + response);
+//                logger.info("RESPONSE 180 RINGING RECIEVED: " + contactAddress);
+//                logger.debug("RESPONSE 180 RINGING RECIEVED \n" + response);
+
+                System.out.println(timeStamp() + "RESPONSE 180 RINGING RECIEVED -> " + responseEvent.getResponse());
                 call = activeCallMap.get(dialog.getCallId().getCallId());
                 if (call != null) {
                     call.handleStackResponse(response, cSeq, dialog);
@@ -349,8 +375,10 @@ public class Connector implements SipListener, Runnable {
      * @param call
      */
     public void sendRequest(Request request, Call call) {
-        logger.info("SEND " + request.getMethod() + " REQUEST");
-        logger.debug("SEND " + request.getMethod() + " REQUEST -> " + request);
+//        logger.info("SEND " + request.getMethod() + " REQUEST");
+//        logger.debug("SEND " + request.getMethod() + " REQUEST -> " + request);
+
+        System.out.println("SEND " + request.getMethod() + " REQUEST -> " + request);
         Map<Request, Call> queueMap = new HashMap<>();
         try {
             Dialog dialog = call.getDialog();
@@ -395,8 +423,10 @@ public class Connector implements SipListener, Runnable {
         Call call = activeCallMap.get(dialog.getCallId().getCallId());
         try {
             dialog.sendAck(ackRequest);
-            logger.info("SEND ACK REQUEST");
-            logger.debug("SEND ACK REQUEST \n" + ackRequest);
+//            logger.info("SEND ACK REQUEST");
+//            logger.debug("SEND ACK REQUEST \n" + ackRequest);
+
+            System.out.println("SEND ACK REQUEST -> " + ackRequest);
         } catch (SipException ex) {
             logger.fatal(ex.getMessage(), ex);
         }
@@ -419,14 +449,18 @@ public class Connector implements SipListener, Runnable {
                     case Response.OK:
                         switch (cSeq.getMethod()) {
                             case Request.BYE:
-                                logger.info("SEND OK FOR BYE");
-                                logger.debug("SEND 200 OK for BYE REQUEST \n" + response);
+//                                logger.info("SEND OK FOR BYE");
+//                                logger.debug("SEND 200 OK for BYE REQUEST \n" + response);
+
+                                System.out.println(timeStamp() + "Received Bye, sending OK");
                                 st.sendResponse(response);
                                 activeCallMap.remove(call.getCallId());
                                 break;
                             case Request.INFO:
-                                logger.info("SEND OK FOR INFO");
-                                logger.debug("SEND 200 OK for INFO REQUEST \n" + response);
+//                                logger.info("SEND OK FOR INFO");
+//                                logger.debug("SEND 200 OK for INFO REQUEST \n" + response);
+
+                                System.out.println(timeStamp() + "Received Info, sending OK");
                                 st.sendResponse(response);
                                 break;
                             case Request.CANCEL:
@@ -435,25 +469,33 @@ public class Connector implements SipListener, Runnable {
                                 st.sendResponse(response);
                                 break;
                             case Request.INVITE:
-                                logger.info("SEND OK FOR INVITE");
-                                logger.debug("SEND 200 OK for INVITE REQUEST \n" + response);
+//                                logger.info("SEND OK FOR INVITE");
+//                                logger.debug("SEND 200 OK for INVITE REQUEST \n" + response);
+
+                                System.out.println("200 OK for INVITE REQUEST -> " + response);
                                 st.sendResponse(response);
                                 break;
                             case Request.OPTIONS:
-                                logger.info("SEND OK FOR OPTIONS");
-                                logger.debug("SEND 200 OK for OPTIONS REQUEST \n" + response);
+//                                logger.info("SEND OK FOR OPTIONS");
+//                                logger.debug("SEND 200 OK for OPTIONS REQUEST \n" + response);
+
+                                System.out.println("200 OK for OPTIONS REQUEST -> " + response);
                                 st.sendResponse(response);
                                 break;
                         }
                         break;
                     case Response.TRYING:
-                        logger.info("SEND 100 TRYING");
-                        logger.debug("SEND 100 TRYING RESPONSE \n" + response);
+//                        logger.info("SEND 100 TRYING");
+//                        logger.debug("SEND 100 TRYING RESPONSE \n" + response);
+
+                        System.out.println("SENT 100 TRYING RESPONSE -> " + response);
                         st.sendResponse(response);
                         break;
                     case Response.RINGING:
-                        logger.info("SEND 180 RINGING");
-                        logger.debug("SEND 180 RINGING RESPONSE \n" + response);
+//                        logger.info("SEND 180 RINGING");
+//                        logger.debug("SEND 180 RINGING RESPONSE \n" + response);
+
+                        System.out.println("SENT 180 RINGING RESPONSE -> " + response);
                         st.sendResponse(response);
                         break;
                 }
@@ -586,5 +628,10 @@ public class Connector implements SipListener, Runnable {
     @Override
     public void run() {
         //do nothing
+    }
+
+    @Override
+    public XMSReturnCode Initialize() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

@@ -8,11 +8,10 @@ package com.dialogic.clientLibrary;
  *
  * @author dwolansk
  */
-public enum XMSReturnCode {
-
-    SUCCESS,
-    FAILURE,
-    INVALID_STATE,
-    NOT_IMPLEMENTED
-
+public enum XMSMediaType {
+    VIDEO,
+    AUDIO,
+    IMAGE,
+    MESSAGE,
+    UNKNOWN
 }
