@@ -5,6 +5,9 @@
  */
 package com.dialogic.examples;
 
+import com.dialogic.clientLibrary.XMSCall;
+import com.dialogic.clientLibrary.XMSConnector;
+import com.dialogic.clientLibrary.XMSObjectFactory;
 import com.dialogic.clientLibrary.XMSReturnCode;
 import com.dialogic.xmstesting.Connector;
 import java.net.Inet4Address;
@@ -21,12 +24,12 @@ public class XMSInboundTest {
     public void start() {
         try {
 
-            Connector connector = new Connector(Inet4Address.getLocalHost().getHostAddress(), 5070);
-//        XMSObjectFactory myFactory = new XMSObjectFactory();
-//        XMSConnector myConnector = myFactory.CreateConnector("XMSConnectorConfig.xml");
-//        XMSCall myCall = myFactory.CreateCall(myConnector); - msml call 
-            MsmlCall call = new MsmlCall(connector);
-            call.setFromAddress(Inet4Address.getLocalHost().getHostAddress());
+            //Connector connector = new Connector(Inet4Address.getLocalHost().getHostAddress(), 5070);
+            XMSObjectFactory myFactory = new XMSObjectFactory();
+            XMSConnector myConnector = myFactory.CreateConnector("ConnectorConfig.xml");
+            XMSCall call = myFactory.CreateCall(myConnector);
+            //MsmlCall call = new MsmlCall(connector);
+            //call.setFromAddress(Inet4Address.getLocalHost().getHostAddress());
 
             XMSReturnCode result = call.Waitcall();
 

@@ -257,7 +257,7 @@ public abstract class XMSConnector {
      *
      * @return
      */
-    String getType() {
+    public String getType() {
         return m_type;
     }
 

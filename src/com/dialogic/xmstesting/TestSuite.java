@@ -5,8 +5,9 @@
  */
 package com.dialogic.xmstesting;
 
-import com.dialogic.examples.XMSConference;
+import com.dialogic.examples.XMSConfDemoSync;
 import com.dialogic.examples.XMSDigitDetect;
+import com.dialogic.examples.XMSEchoTestAsync;
 import com.dialogic.examples.XMSMultipleInvites;
 import com.dialogic.examples.XMSInboundEchoTest;
 import com.dialogic.examples.XMSInboundNoAutoConnectTest;
@@ -25,12 +26,13 @@ public class TestSuite {
 
         //new XMSInboundTest().start();
         //new XMSOutboundTest().start();
-        new XMSInboundRecordTest().start();
+        //new XMSInboundRecordTest().start();
         //new XMSInboundEchoTest().start();
         //new XMSInboundNoAutoConnectTest().start();
         //new XMSMultipleInvites().start();
         //new XMSMultipleInboundTest().start();
-        //new XMSConference().start();
+        //new XMSConfDemoSync().start();
         //new XMSDigitDetect().start();
+        new XMSEchoTestAsync().start();
     }
 }

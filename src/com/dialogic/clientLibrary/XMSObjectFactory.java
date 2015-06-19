@@ -4,6 +4,9 @@
  */
 package com.dialogic.clientLibrary;
 
+import com.dialogic.xmstesting.Connector;
+import com.dialogic.xmstesting.MsmlCall;
+import com.dialogic.xmstesting.XMSMsmlConference;
 import java.io.*;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
@@ -12,6 +15,8 @@ import java.io.*;
  * Used for parsing the XML config file
  */
 import java.lang.String;
+import java.net.Inet4Address;
+import java.net.UnknownHostException;
 
 import nu.xom.Builder;
 import nu.xom.Document;
@@ -107,8 +112,12 @@ public class XMSObjectFactory {
                     //return new XMSRestConnector(a_ConfigFileName);
                     //return new XMSRestConnector();
                 } else if (l_techtype.equals("MSML")) {
-
-                    //return new XMSMsmlConnector();
+                    try {
+                        // this is local address and port, do we need a config file for this?
+                        return new Connector(Inet4Address.getLocalHost().getHostAddress(), 5070);
+                    } catch (UnknownHostException ex) {
+                        logger.fatal(ex.getMessage(), ex);
+                    }
                 }
             }
 
@@ -149,10 +158,14 @@ public class XMSObjectFactory {
             logger.info("Creating a REST Call Object via XMSRestConnector");
             //XMSCall l_call = new XMSRestCall(a_conn);                
             //return l_call;
+        } else if (a_conn.getType().equals("MSML")) {
+            XMSCall l_call = new MsmlCall((Connector) a_conn);
+            return l_call;
         }
         logger.error("Error detecting the type of the passed XMSConnector");
         return null;
     }
+
     /**
      * This is used to create a new XMSConference Object of the correct type.
      *
@@ -160,32 +173,39 @@ public class XMSObjectFactory {
      * @return WARNING: When using the STRING version of this you must call the
      * XMSCall.Initialize() with the XMSConnector at a later time.
      */
-//    public XMSConference CreateConference(String a_type){
-//
-//        if(a_type.equals( "REST")){
-//            logger.info("Creating a REST Conference Object via String");
-//            XMSConference l_conf= new XMSRestConference();
+    public XMSConference CreateConference(String a_type) {
+
+        if (a_type.equals("REST")) {
+            logger.info("Creating a REST Conference Object via String");
+//            XMSConference l_conf = new XMSRestConference();
 //            return l_conf;
-//            
-//        }
-//        return null;
-//    }
-//    /**
-//     * This is used to create a new XMSCallObject of the correct type and
-//     * tie it into the connector
-//     * @param a_type
-//     * @return 
-//     */
-//    public XMSConference CreateConference(XMSConnector a_conn){
-//
-//        logger.info("a_conn.m_type" + a_conn.m_type);
-//
-//        if(a_conn.getType().equals( "REST")){
-//            logger.info("Creating a REST Conference Object via XMSRestConnector");
-//            XMSConference l_conf = new XMSRestConference(a_conn);                
+        } else if (a_type.equals("MSML")) {
+            XMSConference l_conf = new XMSMsmlConference();
+            return l_conf;
+        }
+        return null;
+    }
+
+    /**
+     * This is used to create a new XMSCallObject of the correct type and tie it
+     * into the connector
+     *
+     * @param a_type
+     * @return
+     */
+    public XMSConference CreateConference(XMSConnector a_conn) {
+
+        logger.info("a_conn.m_type" + a_conn.m_type);
+
+        if (a_conn.getType().equals("REST")) {
+            logger.info("Creating a REST Conference Object via XMSRestConnector");
+//            XMSConference l_conf = new XMSRestConference(a_conn);
 //            return l_conf;
-//        }
-//        logger.error("Error detecting the type of the passed XMSConnector");
-//        return null;
-//    }
+        } else if (a_conn.getType().equals("MSML")) {
+            XMSConference l_conf = new XMSMsmlConference(a_conn);
+            return l_conf;
+        }
+        logger.error("Error detecting the type of the passed XMSConnector");
+        return null;
+    }
 }

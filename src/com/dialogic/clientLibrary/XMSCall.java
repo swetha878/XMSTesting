@@ -36,10 +36,10 @@ public abstract class XMSCall extends XMSObject {
     public XMSMakecallOptions MakecallOptions = new XMSMakecallOptions();
     //public XMSUpdatecallOptions UpdatecallOptions= new XMSUpdatecallOptions();
     public XMSWaitcallOptions WaitcallOptions = new XMSWaitcallOptions();
-     //public XMSAnswercallOptions AnswercallOptions = WaitcallOptions;  
+    //public XMSAnswercallOptions AnswercallOptions = WaitcallOptions;  
     //public XMSAcceptcallOptions AcceptcallOptions = new XMSAcceptcallOptions();
     //public XMSAnswercallOptions AnswercallOptions = new XMSAnswercallOptions();  
-    //public XMSRecordOptions RecordOptions = new XMSRecordOptions();
+    public XMSRecordOptions RecordOptions = new XMSRecordOptions();
     public XMSPlayOptions PlayOptions = new XMSPlayOptions();
 //     public XMSCollectDigitsOptions CollectDigitsOptions = new XMSCollectDigitsOptions();
 //     public XMSPlayCollectOptions PlayCollectOptions = new XMSPlayCollectOptions();

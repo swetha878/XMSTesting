@@ -8,7 +8,7 @@ package com.dialogic.clientLibrary;
  *
  * @author dwolansk
  */
-public class XMSWaitcallOptions /*extends XMSAnswercallOptions*/ {
+public class XMSWaitcallOptions extends XMSAnswercallOptions {
 
     public boolean m_autoConnectEnabled;
 

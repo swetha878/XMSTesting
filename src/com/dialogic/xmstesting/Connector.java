@@ -90,6 +90,7 @@ public class Connector extends XMSConnector implements SipListener, Runnable {
      * @param myPort
      */
     public Connector(String myIpAddress, int myPort) {
+        m_type = "MSML";
         if (sipFactory == null) {
             sipFactory = SipFactory.getInstance();
             sipFactory.setPathName("gov.nist"); // denotes the SIP stack
@@ -619,6 +620,7 @@ public class Connector extends XMSConnector implements SipListener, Runnable {
 
     public void addToWaitList(Call call) {
         waitCallList.add(call);
+        System.out.println("Calls waiting" + waitCallList);
     }
 
     public void addToActiveMap(String id, Call call) {
