@@ -13,7 +13,7 @@ public class XMSMakecallOptions {
     boolean m_cpaEnabled;
     //XMSMediaType m_mediaType; 
     boolean m_iceEnabled;
-    String m_sdp;
+    public String m_sdp;
     boolean m_signalingEnabled;
     boolean m_encryptionEnabled;
     String m_sourceAddress;

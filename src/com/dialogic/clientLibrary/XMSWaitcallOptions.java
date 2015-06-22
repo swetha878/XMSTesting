@@ -22,7 +22,7 @@ public class XMSWaitcallOptions extends XMSAnswercallOptions {
     /**
      * Resets all the contents back to default
      */
-    //@Override
+    @Override
     public void Reset() {
         //super.Reset();
         m_autoConnectEnabled = true;

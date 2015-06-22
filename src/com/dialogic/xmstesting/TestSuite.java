@@ -24,7 +24,7 @@ public class TestSuite {
 
     public static void main(String[] args) {
 
-        //new XMSInboundTest().start();
+        new XMSInboundTest().start();
         //new XMSOutboundTest().start();
         //new XMSInboundRecordTest().start();
         //new XMSInboundEchoTest().start();
@@ -33,6 +33,6 @@ public class TestSuite {
         //new XMSMultipleInboundTest().start();
         //new XMSConfDemoSync().start();
         //new XMSDigitDetect().start();
-        new XMSEchoTestAsync().start();
+        //new XMSEchoTestAsync().start();
     }
 }
