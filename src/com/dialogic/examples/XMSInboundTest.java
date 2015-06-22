@@ -7,6 +7,7 @@ package com.dialogic.examples;
 
 import com.dialogic.clientLibrary.XMSCall;
 import com.dialogic.clientLibrary.XMSConnector;
+import com.dialogic.clientLibrary.XMSMediaType;
 import com.dialogic.clientLibrary.XMSObjectFactory;
 import com.dialogic.clientLibrary.XMSReturnCode;
 import com.dialogic.xmstesting.Connector;
@@ -35,7 +36,8 @@ public class XMSInboundTest {
 
             System.out.println("WAIT CALL RESULT -> " + result);
 
-            XMSReturnCode playResult = call.Play("file://verification/greeting.wav");
+            //call.PlayOptions.SetMediaType(XMSMediaType.VIDEO);
+            XMSReturnCode playResult = call.Play("file://verification/greeting");
 
             System.out.println("PLAY RESULT -> " + playResult);
 

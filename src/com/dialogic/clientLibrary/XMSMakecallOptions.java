@@ -11,7 +11,7 @@ package com.dialogic.clientLibrary;
 public class XMSMakecallOptions {
 
     boolean m_cpaEnabled;
-    //XMSMediaType m_mediaType; 
+    XMSMediaType m_mediaType;
     boolean m_iceEnabled;
     public String m_sdp;
     boolean m_signalingEnabled;
@@ -36,7 +36,7 @@ public class XMSMakecallOptions {
      */
     public void Reset() {
         m_cpaEnabled = false;
-        //m_mediaType = XMSMediaType.AUDIO;
+        m_mediaType = XMSMediaType.AUDIO;
         m_iceEnabled = false;
         m_signalingEnabled = true;
         m_sdp = "";
@@ -139,9 +139,10 @@ public class XMSMakecallOptions {
      *
      * @param a_mediaType - AUDIO or VIDEO
      */
-//    public void SetMediaType(XMSMediaType a_mediaType){
-//        m_mediaType=a_mediaType;
-//    }
+    public void SetMediaType(XMSMediaType a_mediaType) {
+        m_mediaType = a_mediaType;
+    }
+
     public void EnableACKOn200(boolean a_isEnabled) {
         m_ACKOn200Enabled = a_isEnabled;
     }
@@ -168,8 +169,8 @@ public class XMSMakecallOptions {
          * NEED TO DISCUSS THIS SOME MORE
          */
         RtnStr = "MakecallOptions: cpaEnabled=" + m_cpaEnabled
-                + //" mediaType="+m_mediaType+
-                " iceEnabled=" + m_iceEnabled
+                + " mediaType=" + m_mediaType
+                + " iceEnabled=" + m_iceEnabled
                 + " encryptionEnabled=" + m_encryptionEnabled
                 + " signalingEnabled=" + m_signalingEnabled
                 + " contenttype=" + m_content_type

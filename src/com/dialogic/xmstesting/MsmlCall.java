@@ -9,9 +9,21 @@ import com.dialogic.clientLibrary.XMSCall;
 import com.dialogic.clientLibrary.XMSCallState;
 import com.dialogic.clientLibrary.XMSEvent;
 import com.dialogic.clientLibrary.XMSEventType;
+import com.dialogic.clientLibrary.XMSMediaType;
 import com.dialogic.clientLibrary.XMSReturnCode;
+import com.dialogic.xms.msml.Collect;
+import com.dialogic.xms.msml.DialogLanguageDatatype;
+import com.dialogic.xms.msml.ExitType;
+import com.dialogic.xms.msml.Group;
+import com.dialogic.xms.msml.Msml;
+import com.dialogic.xms.msml.ObjectFactory;
+import com.dialogic.xms.msml.Play;
+import com.dialogic.xms.msml.Play.Media;
+import com.dialogic.xms.msml.Send;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.Observable;
@@ -22,6 +34,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.sip.address.Address;
 import javax.sip.header.FromHeader;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -53,6 +69,7 @@ public class MsmlCall extends XMSCall implements Observer {
     static int mediaStatusCode;
     private static String connectionAddress;
     static XMSEvent xmsEvent;
+    static ObjectFactory objectFactory = new ObjectFactory();
 
     public MsmlCall(Connector connector) {
         try {
@@ -97,6 +114,7 @@ public class MsmlCall extends XMSCall implements Observer {
     public XMSReturnCode Makecall(String dest) {
         try {
             setState(XMSCallState.MAKECALL);
+            MakecallOptions.setCalledAddress(dest);
             if (!dest.isEmpty()) {
                 String[] params = dest.split("@");
                 if (params.length != 0) {
@@ -363,22 +381,37 @@ public class MsmlCall extends XMSCall implements Observer {
                 xmsEvent.CreateEvent(XMSEventType.CALL_CUSTOM, this, "", "", reponseMessage);
                 setLastEvent(xmsEvent);
             } else if (getState() != XMSCallState.DISCONNECTED) {
-                Pattern pattern = Pattern.compile("response=\\\"(.*?)\\\"");
-                Matcher m = pattern.matcher(reponseMessage);
-                if (m.find()) {
-                    String event = m.group(1);
-
-                    if (Long.parseLong(event) == 200) {
-                        System.out.println("Response 200 received");
-                        mediaStatusCode = Integer.parseInt(event);
+                if (e.getRes().getRawContent() != null) {
+                    Msml msml = unmarshalObject(new ByteArrayInputStream((byte[]) e.getRes().getRawContent()));
+                    Msml.Result result = msml.getResult();
+                    if (result.getResponse().equalsIgnoreCase("200")) {
+                        mediaStatusCode = Integer.parseInt(result.getResponse());
+                        System.out.println("jaxb" + result.getResponse());
                         XMSEvent xmsEvent = new XMSEvent();
-                        xmsEvent.CreateEvent(XMSEventType.CALL_INFO, this, event, "", reponseMessage);
+                        xmsEvent.CreateEvent(XMSEventType.CALL_INFO, this, result.getResponse(), "", reponseMessage);
                         UnblockIfNeeded(xmsEvent);
-                    } else if (Long.parseLong(event) == 400) {
+                    } else if (result.getResponse().equalsIgnoreCase("400")) {
                         System.out.println("Response 400 received");
-                        mediaStatusCode = Integer.parseInt(event);
+                        mediaStatusCode = Integer.parseInt(result.getResponse());
                     }
                 }
+
+//                Pattern pattern = Pattern.compile("response=\\\"(.*?)\\\"");
+//                Matcher m = pattern.matcher(reponseMessage);
+//                if (m.find()) {
+//                    String event = m.group(1);
+//
+//                    if (Long.parseLong(event) == 200) {
+//                        System.out.println("Response 200 received");
+//                        mediaStatusCode = Integer.parseInt(event);
+//                        XMSEvent xmsEvent = new XMSEvent();
+//                        xmsEvent.CreateEvent(XMSEventType.CALL_INFO, this, event, "", reponseMessage);
+//                        UnblockIfNeeded(xmsEvent);
+//                    } else if (Long.parseLong(event) == 400) {
+//                        System.out.println("Response 400 received");
+//                        mediaStatusCode = Integer.parseInt(event);
+//                    }
+//                }
             }
         } else if (e.getType().equals(EventType.INFOREQUEST)) {
             if (!MakecallOptions.m_OKOnInfoEnabled) {
@@ -391,6 +424,16 @@ public class MsmlCall extends XMSCall implements Observer {
                 xmsEvent.CreateEvent(XMSEventType.CALL_CUSTOM, this, "", "", info);
                 setLastEvent(xmsEvent);
             } else {
+//                if (e.getRes().getRawContent() != null) {
+//                    Msml msml = unmarshalObject(new ByteArrayInputStream((byte[]) e.getRes().getRawContent()));
+//                    Msml.Event event = msml.getEvent();
+//                    String eventName = event.getName();
+//                    System.out.println("eventName" + eventName);
+////                    if (eventName != null && eventName.equalsIgnoreCase("moml.exit")) {
+////                        
+////                    }
+//                }
+
                 String name = null;
                 Pattern eventPattern = Pattern.compile("name=\\\".*?\\\"");
                 Matcher eventMatcher = eventPattern.matcher(info);
@@ -468,10 +511,13 @@ public class MsmlCall extends XMSCall implements Observer {
                             dialogType = dialogMatcher.group(1);
                         }
                         if (dialogType != null) {
-                            if (dialogType.equals("Play")) {
-                                setState(XMSCallState.PLAY_END);
-                            } else if (dialogType.equals("Record")) {
-                                setState(XMSCallState.RECORD_END);
+                            switch (dialogType) {
+                                case "Play":
+                                    setState(XMSCallState.PLAY_END);
+                                    break;
+                                case "Record":
+                                    setState(XMSCallState.RECORD_END);
+                                    break;
                             }
                         }
                         UnblockIfNeeded(xmsEvent);
@@ -532,19 +578,106 @@ public class MsmlCall extends XMSCall implements Observer {
     }
 
     // change to xml beans/jaxb objects
-    private static String buildPlayMsml(String fileName) {
-        String msml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
-                + "<msml version=\"1.1\">\n"
-                + "<dialogstart target=\"conn:1234\" type=\"application/moml+xml\" name=\"Play\">\n"
-                + "	<play >\n"
-                + "		<audio uri=\"" + fileName + "\" />\n"
-                + "		<playexit>\n"
-                + "		<exit namelist = \"play.end play.amt\"/>\n"
-                + "		</playexit>\n"
-                + "	</play>\n"
-                + "</dialogstart>\n"
-                + "</msml>";
-        return msml;
+    private String buildPlayMsml(String fileName) {
+//        String msml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
+//                + "<msml version=\"1.1\">\n"
+//                + "<dialogstart target=\"conn:1234\" type=\"application/moml+xml\" name=\"Play\">\n"
+//                + "	<play >\n"
+//                + "		<audio uri=\"" + fileName + "\" />\n"
+//                + "		<playexit>\n"
+//                + "		<exit namelist = \"play.end play.amt\"/>\n"
+//                + "		</playexit>\n"
+//                + "	</play>\n"
+//                + "</dialogstart>\n"
+//                + "</msml>";
+        java.io.StringWriter sw = new StringWriter();
+
+        Msml msml = objectFactory.createMsml();
+        msml.setVersion("1.1");
+
+        Msml.Dialogstart dialogstart = objectFactory.createMsmlDialogstart();
+        dialogstart.setTarget("conn:1234");
+        dialogstart.setType(DialogLanguageDatatype.APPLICATION_MOML_XML);
+        dialogstart.setName("Play");
+
+        Group group = objectFactory.createGroup();
+        group.setTopology("parallel");
+
+        Play play = objectFactory.createPlay();
+        int repeat = Integer.parseInt(PlayOptions.m_repeat);
+        if (repeat > 0) {
+            play.setIterate("" + repeat++);
+            //TODO may need to trim "s" off the offset
+            play.setInterval(PlayOptions.m_delay);
+        }
+
+        if (!PlayOptions.m_offset.equalsIgnoreCase("0s")) {
+            if (PlayOptions.m_mediaType == XMSMediaType.AUDIO) {
+                //TODO may need to trim "s" off the offset
+                play.setOffset(PlayOptions.m_offset);
+            } else {
+                logger.warning("As per spec offset only supported for Audio, ignoring parameter");
+            }
+        }
+
+        Play.Media media = objectFactory.createPlayMedia();
+
+        Play.Media.Audio audio = objectFactory.createPlayMediaAudio();
+        audio.setUri(fileName + ".wav");
+        media.getAudioOrVideo().add(audio);
+
+        Play.Media.Video video = null;
+        if (PlayOptions.m_mediaType == XMSMediaType.VIDEO) {
+            video = objectFactory.createPlayMediaVideo();
+            video.setUri(fileName + ".vid");
+            media.getAudioOrVideo().add(video);
+        }
+
+        Play.Playexit playexit = objectFactory.createPlayPlayexit();
+        ExitType exitType = new ExitType();
+        exitType.setNamelist("play.end play.amt");
+        playexit.setExit(exitType);
+        play.setPlayexit(playexit);
+
+        play.getAudioOrVideoOrMedia().add(objectFactory.createPlayMedia(media));
+
+        group.getPrimitive().add(objectFactory.createPlay(play));
+
+        if (!PlayOptions.m_terminateDigits.isEmpty()) {
+            Collect collect = objectFactory.createCollect();
+            Collect.Pattern termDigPattern = objectFactory.createCollectPattern();
+            termDigPattern.setDigits(PlayOptions.m_terminateDigits);
+            Send sendDigit = objectFactory.createSend();
+            sendDigit.setTarget("source");
+            sendDigit.setEvent("TermkeyRecieved");
+            sendDigit.setNamelist("dtmf.digits dtmf.len dtmf.last");
+            termDigPattern.getSend().add(sendDigit);
+
+            Send playTermSend = objectFactory.createSend();
+            playTermSend.setTarget("Play");
+            playTermSend.setEvent("terminate");
+            termDigPattern.getSend().add(playTermSend);
+
+            collect.getPattern().add(termDigPattern);
+            group.getPrimitive().add(objectFactory.createCollect(collect));
+
+        }
+
+        dialogstart.getMomlRequest().add(objectFactory.createGroup(group));
+        msml.getMsmlRequest().add(dialogstart);
+
+        try {
+            JAXBContext jaxbContext = JAXBContext.newInstance(Msml.class);
+            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+            jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            jaxbMarshaller.marshal(msml, sw);
+
+        } catch (JAXBException ex) {
+            logger.log(Level.SEVERE, null, ex);
+        }
+
+        System.out.println("MSML PLAY -> " + sw.toString());
+        return sw.toString();
 
     }
 
@@ -652,5 +785,17 @@ public class MsmlCall extends XMSCall implements Observer {
             m_state = XMSCallState.CUSTOM;
             msmlSip.sendInfo(msml);
         }
+    }
+
+    public Msml unmarshalObject(ByteArrayInputStream sdp) {
+        Msml msml = objectFactory.createMsml();
+        try {
+            JAXBContext jaxbContext = JAXBContext.newInstance(Msml.class);
+            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+            msml = (Msml) unmarshaller.unmarshal(sdp);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return msml;
     }
 }
