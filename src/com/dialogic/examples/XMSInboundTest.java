@@ -25,18 +25,18 @@ public class XMSInboundTest {
     public void start() {
         try {
 
-            //Connector connector = new Connector(Inet4Address.getLocalHost().getHostAddress(), 5070);
             XMSObjectFactory myFactory = new XMSObjectFactory();
             XMSConnector myConnector = myFactory.CreateConnector("ConnectorConfig.xml");
             XMSCall call = myFactory.CreateCall(myConnector);
-            //MsmlCall call = new MsmlCall(connector);
-            //call.setFromAddress(Inet4Address.getLocalHost().getHostAddress());
 
             XMSReturnCode result = call.Waitcall();
 
             System.out.println("WAIT CALL RESULT -> " + result);
 
             //call.PlayOptions.SetMediaType(XMSMediaType.VIDEO);
+            //call.PlayOptions.SetRepeat("2");
+            //call.PlayOptions.SetDelay("3");
+            //call.PlayOptions.SetOffset("5");
             XMSReturnCode playResult = call.Play("file://verification/greeting");
 
             System.out.println("PLAY RESULT -> " + playResult);
