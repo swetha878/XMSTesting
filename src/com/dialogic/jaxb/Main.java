@@ -6,6 +6,7 @@
 //package com.dialogic.jaxb;
 //
 //import com.dialogic.clientLibrary.XMSMediaType;
+//import com.dialogic.xms.msml.AudioMixType;
 //import com.dialogic.xms.msml.BooleanDatatype;
 //import com.dialogic.xms.msml.Collect;
 //import com.dialogic.xms.msml.DialogLanguageDatatype;
@@ -14,7 +15,11 @@
 //import com.dialogic.xms.msml.Msml;
 //import com.dialogic.xms.msml.ObjectFactory;
 //import com.dialogic.xms.msml.Record;
+//import com.dialogic.xms.msml.RootType;
 //import com.dialogic.xms.msml.Send;
+//import com.dialogic.xms.msml.StreamType;
+//import com.dialogic.xms.msml.VideoLayoutType;
+//import com.dialogic.xmstesting.Call;
 //import java.io.StringWriter;
 //import java.math.BigInteger;
 //import java.util.logging.Level;
@@ -36,53 +41,28 @@
 //        Msml msml = objectFactory.createMsml();
 //        msml.setVersion("1.1");
 //
-//        Msml.Dialogstart dialogstart = objectFactory.createMsmlDialogstart();
-//        dialogstart.setTarget("conn:1234");
-//        dialogstart.setType(DialogLanguageDatatype.APPLICATION_MOML_XML);
-//        dialogstart.setName("Record");
+//        Msml.Join join = objectFactory.createMsmlJoin();
+//        join.setId2("conf:conf1");
+//        join.setId1("conn:1234");
+//        join.setMark("2");
 //
-//        Group group = objectFactory.createGroup();
-//        group.setTopology("parallel");
+//        StreamType streamType1 = objectFactory.createStreamType();
+//        streamType1.setMedia("audio");
 //
-//        Record record = objectFactory.createRecord();
-//        record.setBeep(BooleanDatatype.TRUE);
-//        record.setAudiodest("file://recorded/Test.wav");
-//        record.setFormat("audio/wav");
-//        record.setMaxtime("10s");
+//        StreamType streamType2 = objectFactory.createStreamType();
+//        streamType2.setMedia("video");
+//        streamType2.setDir("from-id1");
+//        streamType2.setDisplay("1");
 //
-//        record.setVideodest("file://recorded/Test.wav");
-//        record.setFormat("video/x-vid");
+//        StreamType streamType3 = objectFactory.createStreamType();
+//        streamType3.setMedia("video");
+//        streamType3.setDir("to-id1");
 //
-//        record.setAudiosamplerate(BigInteger.valueOf(16000));
-//        record.setAudiosamplesize(BigInteger.valueOf(16));
+//        join.getStream().add(streamType1);
+//        join.getStream().add(streamType2);
+//        join.getStream().add(streamType3);
 //
-//        Record.Recordexit recordExit = objectFactory.createRecordRecordexit();
-//        ExitType exitType = new ExitType();
-//        exitType.setNamelist("record.end record.len");
-//        recordExit.setExit(exitType);
-//        record.setRecordexit(recordExit);
-//
-//        group.getPrimitive().add(objectFactory.createRecord(record));
-//
-//        Collect collect = objectFactory.createCollect();
-//        Collect.Pattern termDigPattern = objectFactory.createCollectPattern();
-//        termDigPattern.setDigits("#");
-//        Send sendDigit = objectFactory.createSend();
-//        sendDigit.setTarget("source");
-//        sendDigit.setEvent("TermkeyRecieved");
-//        sendDigit.setNamelist("dtmf.digits dtmf.len dtmf.last");
-//        termDigPattern.getSend().add(sendDigit);
-//
-//        Send recordTermSend = objectFactory.createSend();
-//        recordTermSend.setTarget("record");
-//        recordTermSend.setEvent("terminate");
-//        termDigPattern.getSend().add(recordTermSend);
-//
-//        collect.getPattern().add(termDigPattern);
-//        group.getPrimitive().add(objectFactory.createCollect(collect));
-//
-//        dialogstart.getMomlRequest().add(objectFactory.createGroup(group));
-//        msml.getMsmlRequest().add(dialogstart);
+//        msml.getMsmlRequest().add(join);
 //
 //        try {
 //            JAXBContext jaxbContext = JAXBContext.newInstance(Msml.class);
@@ -91,9 +71,10 @@
 //            jaxbMarshaller.marshal(msml, sw);
 //
 //        } catch (JAXBException ex) {
-//            System.out.println("Level.SEVERE, ex.getMessage(), ex");
+//            java.util.logging.Logger.getLogger(Call.class
+//                    .getName()).log(Level.SEVERE, null, ex);
 //        }
 //
-//        System.out.println("MSML RECORD -> " + sw.toString());
+//        System.out.println("MSML JOIN -> " + sw.toString());
 //    }
 //}

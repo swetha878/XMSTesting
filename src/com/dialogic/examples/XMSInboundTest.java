@@ -10,11 +10,8 @@ import com.dialogic.clientLibrary.XMSConnector;
 import com.dialogic.clientLibrary.XMSMediaType;
 import com.dialogic.clientLibrary.XMSObjectFactory;
 import com.dialogic.clientLibrary.XMSReturnCode;
-import com.dialogic.xmstesting.Connector;
-import java.net.Inet4Address;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import com.dialogic.xmstesting.MsmlCall;
 
 /**
  *
