@@ -16,6 +16,7 @@ import com.dialogic.xms.msml.Collect;
 import com.dialogic.xms.msml.DialogLanguageDatatype;
 import com.dialogic.xms.msml.ExitType;
 import com.dialogic.xms.msml.Group;
+import com.dialogic.xms.msml.IterateSendType;
 import com.dialogic.xms.msml.Msml;
 import com.dialogic.xms.msml.ObjectFactory;
 import com.dialogic.xms.msml.Play;
@@ -257,6 +258,23 @@ public class MsmlCall extends XMSCall implements Observer {
     }
 
     @Override
+    public XMSReturnCode CollectDigits() {
+        try {
+            if (msmlSip != null) {
+                msmlSip.sendInfo(buildCollectMsml());
+                setState(XMSCallState.COLLECTDIGITS);
+                BlockIfNeeded(XMSEventType.CALL_INFO);
+                if (mediaStatusCode == 200) {
+                    BlockIfNeeded(XMSEventType.CALL_COLLECTDIGITS_END);
+                }
+            }
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
+        }
+        return XMSReturnCode.SUCCESS;
+    }
+
+    @Override
     public XMSReturnCode PlayCollect(String filename) {
         try {
             if (msmlSip != null && filename != null) {
@@ -283,9 +301,15 @@ public class MsmlCall extends XMSCall implements Observer {
     }
 
     @Override
-    public XMSReturnCode CollectDigits() {
+    public XMSReturnCode SendInfo(String msml) {
         try {
-            if (msmlSip != null) {
+            if (msmlSip != null && msml != null) {
+                m_state = XMSCallState.CUSTOM;
+                msmlSip.sendInfo(msml);
+                BlockIfNeeded(XMSEventType.CALL_INFO);
+                if (mediaStatusCode == 200) {
+                    BlockIfNeeded(XMSEventType.CALL_INFO);
+                }
             }
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
@@ -460,7 +484,7 @@ public class MsmlCall extends XMSCall implements Observer {
                                 case "Record":
                                     String len = events.get("record.len");
                                     String recordReason = events.get("record.end");
-                                    xmsEvent.CreateEvent(XMSEventType.CALL_PLAY_END, this, len, recordReason, info);
+                                    xmsEvent.CreateEvent(XMSEventType.CALL_RECORD_END, this, len, recordReason, info);
                                     xmsEvent.setReason(recordReason);
                                     setLastEvent(xmsEvent);
                                     break;
@@ -470,6 +494,26 @@ public class MsmlCall extends XMSCall implements Observer {
                                     break;
                             }
                         }
+                    } else if (eventName != null && eventName.equalsIgnoreCase("nomatch")
+                            || eventName != null && eventName.equalsIgnoreCase("dtmfexit")
+                            || eventName != null && eventName.equalsIgnoreCase("termkey")
+                            || eventName != null && eventName.equalsIgnoreCase("noinput")) {
+                        List<JAXBElement<String>> eventNameValueList = event.getNameAndValue();
+                        Map<String, String> events = new HashMap<>();
+                        for (int i = 0, n = eventNameValueList.size(); i < n; i += 2) {
+                            System.out.println("[i] -> " + eventNameValueList.get(i).getValue());
+                            System.out.println("[i+1] -> " + eventNameValueList.get(i + 1).getValue());
+
+                            events.put(eventNameValueList.get(i).getValue(),
+                                    eventNameValueList.get(i + 1).getValue());
+                        }
+                        String dtmfDigits = events.get("dtmf.digits");
+                        String dtmfEnd = events.get("dtmf.end");
+                        String dtmfLen = events.get("dtmf.len");
+                        xmsEvent.CreateEvent(XMSEventType.CALL_SENDDTMF_END, this, dtmfDigits, dtmfEnd, info);
+                        xmsEvent.setReason(dtmfEnd);
+                        setLastEvent(xmsEvent);
+
                     } else if (eventName != null && eventName.equalsIgnoreCase("msml.dialog.exit")) {
                         if (getState() != XMSCallState.DISCONNECTED) {
                             if (dialogType != null) {
@@ -734,6 +778,79 @@ public class MsmlCall extends XMSCall implements Observer {
         return sw.toString();
     }
 
+    private String buildCollectMsml() {
+        java.io.StringWriter sw = new StringWriter();
+
+        Msml msml = objectFactory.createMsml();
+        msml.setVersion("1.1");
+
+        Msml.Dialogstart dialogstart = objectFactory.createMsmlDialogstart();
+        dialogstart.setTarget("conn:1234");
+        dialogstart.setType(DialogLanguageDatatype.APPLICATION_MOML_XML);
+        dialogstart.setName("Collect");
+
+        Collect collect = objectFactory.createCollect();
+        if (!CollectDigitsOptions.m_timeoutValue.equalsIgnoreCase("0s")) {
+            collect.setFdt(CollectDigitsOptions.m_timeoutValue);
+        } else {
+            collect.setFdt("10s");
+        }
+        collect.setIdt("2s");
+        collect.setStarttimer(BooleanDatatype.TRUE);
+        collect.setCleardb(BooleanDatatype.TRUE);
+        Collect.Pattern termDigPattern = objectFactory.createCollectPattern();
+        termDigPattern.setDigits(CollectDigitsOptions.m_terminateDigits);
+
+        Send sendDigit = objectFactory.createSend();
+        sendDigit.setTarget("source");
+        sendDigit.setEvent("termKey");
+        sendDigit.setNamelist("dtmf.digits dtmf.len dtmf.end");
+        termDigPattern.getSend().add(sendDigit);
+        collect.getPattern().add(termDigPattern);
+
+        Collect.Pattern digitsPattern = objectFactory.createCollectPattern();
+        digitsPattern.setDigits("xxxxx");
+        collect.getPattern().add(digitsPattern);
+
+        IterateSendType noinput = objectFactory.createIterateSendType();
+        Send sendNoInput = objectFactory.createSend();
+        sendNoInput.setTarget("source");
+        sendNoInput.setEvent("noinput");
+        sendNoInput.setNamelist("dtmf.digits dtmf.len dtmf.end");
+        noinput.getSend().add(sendNoInput);
+        collect.setNoinput(noinput);
+
+        IterateSendType nomatch = objectFactory.createIterateSendType();
+        Send sendNoMatch = objectFactory.createSend();
+        sendNoMatch.setTarget("source");
+        sendNoMatch.setEvent("nomatch");
+        sendNoMatch.setNamelist("dtmf.digits dtmf.len dtmf.end");
+        nomatch.getSend().add(sendNoInput);
+        collect.setNomatch(nomatch);
+
+        Collect.Dtmfexit dtmfexit = objectFactory.createCollectDtmfexit();
+        Send sendDtmf = objectFactory.createSend();
+        sendNoMatch.setTarget("source");
+        sendNoMatch.setEvent("dtmfexit");
+        sendNoMatch.setNamelist("dtmf.digits dtmf.len dtmf.end");
+        dtmfexit.getSend().add(sendDtmf);
+        collect.setDtmfexit(dtmfexit);
+
+        dialogstart.getMomlRequest().add(collect);
+        msml.getMsmlRequest().add(dialogstart);
+        try {
+            JAXBContext jaxbContext = JAXBContext.newInstance(Msml.class);
+            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+            jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            jaxbMarshaller.marshal(msml, sw);
+
+        } catch (JAXBException ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
+        }
+        System.out.println("MSML COLLECT DIGITS -> " + sw.toString());
+        return sw.toString();
+    }
+
     private static String buildPlayCollectMsml(String filename) {
         String msml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
                 + "<msml version=\"1.1\">\n"
@@ -808,13 +925,6 @@ public class MsmlCall extends XMSCall implements Observer {
      */
     public void setConnectionAddress(String aConnectionAddress) {
         connectionAddress = aConnectionAddress;
-    }
-
-    public void sendCustomScript(String msml) {
-        if (msmlSip != null && msml != null) {
-            m_state = XMSCallState.CUSTOM;
-            msmlSip.sendInfo(msml);
-        }
     }
 
     public Msml unmarshalObject(ByteArrayInputStream sdp) {

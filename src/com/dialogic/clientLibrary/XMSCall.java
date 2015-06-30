@@ -41,7 +41,7 @@ public abstract class XMSCall extends XMSObject {
     //public XMSAnswercallOptions AnswercallOptions = new XMSAnswercallOptions();  
     public XMSRecordOptions RecordOptions = new XMSRecordOptions();
     public XMSPlayOptions PlayOptions = new XMSPlayOptions();
-//     public XMSCollectDigitsOptions CollectDigitsOptions = new XMSCollectDigitsOptions();
+    public XMSCollectDigitsOptions CollectDigitsOptions = new XMSCollectDigitsOptions();
 //     public XMSPlayCollectOptions PlayCollectOptions = new XMSPlayCollectOptions();
 //     public XMSPlayRecordOptions PlayRecordOptions = new XMSPlayRecordOptions();
 //     public XMSPlayPhraseOptions PlayPhraseOptions = new XMSPlayPhraseOptions();

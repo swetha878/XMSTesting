@@ -1,0 +1,163 @@
+2015-06-30 09:12:19,490 INFO c.d.x.Connector [main] SipStack Created gov.nist.javax.sip.SipStackImpl@30a3107a 
+2015-06-30 09:12:19,729 INFO c.d.x.Connector [main] SipProvider Created gov.nist.javax.sip.SipProviderImpl@23fe1d71 
+2015-06-30 09:12:22,364 INFO c.d.x.Call [EventScannerThread] CREATING OPTIONS RESPONSE 
+2015-06-30 09:12:22,403 INFO c.d.x.Call [pool-2-thread-1] CREATING 100 TRYING RESPONSE 
+2015-06-30 09:12:22,413 INFO c.d.x.Call [pool-2-thread-1] CREATING AN INVITE REQUEST 
+2015-06-30 09:12:22,502 INFO c.d.x.Call [EventScannerThread] CREATING 180 RINGING RESPONSE 
+2015-06-30 09:12:22,506 INFO c.d.x.Call [EventScannerThread] CREATING ACK REQUEST  
+2015-06-30 09:12:22,507 DEBUG c.d.x.Connector [EventScannerThread] REMOTE TAG 
+f18c4820-8d409892-13c4-50022-4bb-7ad53049-4bb 
+2015-06-30 09:12:22,507 INFO c.d.x.Call [EventScannerThread] CREATING 200OK FOR INVITE 
+2015-06-30 09:12:22,917 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:12:23,087 INFO c.d.x.Call [Thread-1] REMOTE TAG -> f18c4820-8d409892-13c4-50022-4bb-7ad53049-4bb 
+2015-06-30 09:12:23,088 INFO c.d.x.Call [Thread-1] CREATING INFO REQUEST TO XMS 
+2015-06-30 09:12:23,170 INFO c.d.x.Call [EventScannerThread] CREATING INFO RESPONSE TO XMS 
+2015-06-30 09:12:28,589 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:12:30,909 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:12:33,421 INFO c.d.x.Call [EventScannerThread] CREATING INFO RESPONSE TO XMS 
+2015-06-30 09:12:33,535 INFO c.d.x.Call [EventScannerThread] CREATING INFO RESPONSE TO XMS 
+2015-06-30 09:12:33,611 INFO c.d.x.Call [Thread-1] CREATE BYE REQUEST 
+2015-06-30 09:12:33,611 DEBUG c.d.x.Call [Thread-1] CREATE BYE REQUEST 
+BYE sip:toto@10.20.120.34 SIP/2.0
+Via: SIP/2.0/UDP 10.20.120.34:5070
+CSeq: 1 BYE
+From: <sip:Test@10.20.120.34:5070>;tag=1b0f463
+To: "" <sip:toto@10.20.120.34>;tag=715
+Call-ID: 904
+Max-Forwards: 70
+Allow: INVITE, BYE, ACK, CANCEL, OPTIONS, INFO
+Content-Length: 0
+
+ 
+2015-06-30 09:12:33,616 INFO c.d.x.Call [Thread-1] CREATE BYE REQUEST 
+2015-06-30 09:12:33,617 DEBUG c.d.x.Call [Thread-1] CREATE BYE REQUEST 
+BYE sip:msml@146.152.64.141 SIP/2.0
+Via: SIP/2.0/UDP 10.20.120.34:5070
+CSeq: 3 BYE
+From: <sip:Test@10.20.120.34>;tag=1a889cc
+To: <sip:msml@146.152.64.141>;tag=f18c4820-8d409892-13c4-50022-4bb-7ad53049-4bb
+Call-ID: 02aa58e5e72fe27b3d9795b478161476@10.20.120.34
+Max-Forwards: 70
+Content-Length: 0
+
+ 
+2015-06-30 09:12:33,619 INFO c.d.x.Connector [EventScannerThread] HASHMAP SIZE: 1 
+2015-06-30 09:12:33,630 INFO c.d.x.Connector [EventScannerThread] HASHMAP SIZE: 0 
+2015-06-30 09:12:39,112 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:12:39,119 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:12:41,617 INFO c.d.x.Connector [EventScannerThread] Dialog Terminated 
+2015-06-30 09:12:41,624 INFO c.d.x.Connector [EventScannerThread] Dialog Terminated 
+2015-06-30 09:12:54,372 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:12:55,186 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:13:05,465 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:13:05,551 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:16:40,050 INFO c.d.x.Connector [main] SipStack Created gov.nist.javax.sip.SipStackImpl@30a3107a 
+2015-06-30 09:16:40,268 FATAL c.d.x.Connector [main] Address already in use: Cannot bind javax.sip.InvalidArgumentException: Address already in use: Cannot bind
+	at gov.nist.javax.sip.SipStackImpl.createListeningPoint(SipStackImpl.java:756)
+	at com.dialogic.xmstesting.Connector.<init>(Connector.java:113)
+	at com.dialogic.clientLibrary.XMSObjectFactory.CreateConnector(XMSObjectFactory.java:117)
+	at com.dialogic.examples.XMSEchoTestAsync.start(XMSEchoTestAsync.java:26)
+	at com.dialogic.xmstesting.TestSuite.main(TestSuite.java:37)
+Caused by: java.io.IOException: Address already in use: Cannot bind
+	at gov.nist.javax.sip.stack.UDPMessageProcessor.<init>(UDPMessageProcessor.java:141)
+	at gov.nist.javax.sip.stack.SIPTransactionStack.createMessageProcessor(SIPTransactionStack.java:1837)
+	at gov.nist.javax.sip.SipStackImpl.createListeningPoint(SipStackImpl.java:737)
+	... 4 more
+
+2015-06-30 09:16:49,191 INFO c.d.x.Connector [main] SipStack Created gov.nist.javax.sip.SipStackImpl@30a3107a 
+2015-06-30 09:16:49,403 INFO c.d.x.Connector [main] SipProvider Created gov.nist.javax.sip.SipProviderImpl@23fe1d71 
+2015-06-30 09:16:52,095 INFO c.d.x.Call [EventScannerThread] CREATING OPTIONS RESPONSE 
+2015-06-30 09:16:52,129 INFO c.d.x.Call [pool-2-thread-1] CREATING 100 TRYING RESPONSE 
+2015-06-30 09:16:52,138 INFO c.d.x.Call [pool-2-thread-1] CREATING AN INVITE REQUEST 
+2015-06-30 09:16:52,234 INFO c.d.x.Call [EventScannerThread] CREATING 180 RINGING RESPONSE 
+2015-06-30 09:16:52,237 INFO c.d.x.Call [EventScannerThread] CREATING ACK REQUEST  
+2015-06-30 09:16:52,239 DEBUG c.d.x.Connector [EventScannerThread] REMOTE TAG 
+f18c5210-8d409892-13c4-50022-5c9-156c3067-5c9 
+2015-06-30 09:16:52,240 INFO c.d.x.Call [EventScannerThread] CREATING 200OK FOR INVITE 
+2015-06-30 09:16:52,658 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:16:52,791 INFO c.d.x.Call [Thread-1] REMOTE TAG -> f18c5210-8d409892-13c4-50022-5c9-156c3067-5c9 
+2015-06-30 09:16:52,792 INFO c.d.x.Call [Thread-1] CREATING INFO REQUEST TO XMS 
+2015-06-30 09:16:52,887 INFO c.d.x.Call [EventScannerThread] CREATING INFO RESPONSE TO XMS 
+2015-06-30 09:16:58,295 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:17:00,658 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:17:03,127 INFO c.d.x.Call [EventScannerThread] CREATING INFO RESPONSE TO XMS 
+2015-06-30 09:17:03,172 INFO c.d.x.Call [EventScannerThread] CREATING INFO RESPONSE TO XMS 
+2015-06-30 09:17:03,267 INFO c.d.x.Call [Thread-1] CREATE BYE REQUEST 
+2015-06-30 09:17:03,267 DEBUG c.d.x.Call [Thread-1] CREATE BYE REQUEST 
+BYE sip:toto@10.20.120.34 SIP/2.0
+Via: SIP/2.0/UDP 10.20.120.34:5070
+CSeq: 1 BYE
+From: <sip:Test@10.20.120.34:5070>;tag=1b6cd38
+To: "" <sip:toto@10.20.120.34>;tag=27890
+Call-ID: 743
+Max-Forwards: 70
+Allow: INVITE, BYE, ACK, CANCEL, OPTIONS, INFO
+Content-Length: 0
+
+ 
+2015-06-30 09:17:03,268 INFO c.d.x.Call [Thread-1] CREATE BYE REQUEST 
+2015-06-30 09:17:03,268 DEBUG c.d.x.Call [Thread-1] CREATE BYE REQUEST 
+BYE sip:msml@146.152.64.141 SIP/2.0
+Via: SIP/2.0/UDP 10.20.120.34:5070
+CSeq: 3 BYE
+From: <sip:Test@10.20.120.34>;tag=17cab90
+To: <sip:msml@146.152.64.141>;tag=f18c5210-8d409892-13c4-50022-5c9-156c3067-5c9
+Call-ID: 10cf409df6063bb5c942563d91068371@10.20.120.34
+Max-Forwards: 70
+Content-Length: 0
+
+ 
+2015-06-30 09:17:03,272 INFO c.d.x.Connector [EventScannerThread] HASHMAP SIZE: 1 
+2015-06-30 09:17:03,272 INFO c.d.x.Call [Thread-1] CREATING AN INVITE REQUEST 
+2015-06-30 09:17:03,274 INFO c.d.x.Connector [EventScannerThread] HASHMAP SIZE: 1 
+2015-06-30 09:17:03,785 INFO c.d.x.Call [EventScannerThread] CREATING AN INVITE REQUEST 
+2015-06-30 09:17:03,788 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:17:04,296 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:17:04,803 INFO c.d.x.Call [EventScannerThread] CREATING ACK REQUEST  
+2015-06-30 09:17:04,805 DEBUG c.d.x.Connector [EventScannerThread] REMOTE TAG 
+f18c5c00-8d409892-13c4-50022-5d4-4a0a6d5a-5d4 
+2015-06-30 09:17:04,805 INFO c.d.x.Call [EventScannerThread] CREATING ACK REQUEST  
+2015-06-30 09:17:04,806 DEBUG c.d.x.Connector [EventScannerThread] REMOTE TAG 
+18467 
+2015-06-30 09:17:04,843 INFO c.d.x.Call [Thread-1] REMOTE TAG -> f18c5c00-8d409892-13c4-50022-5d4-4a0a6d5a-5d4 
+2015-06-30 09:17:04,845 INFO c.d.x.Call [Thread-1] CREATING INFO REQUEST TO XMS 
+2015-06-30 09:17:08,768 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:17:08,769 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:17:10,348 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:17:11,271 INFO c.d.x.Connector [EventScannerThread] Dialog Terminated 
+2015-06-30 09:17:11,273 INFO c.d.x.Connector [EventScannerThread] Dialog Terminated 
+2015-06-30 09:17:15,058 INFO c.d.x.Call [EventScannerThread] CREATING INFO RESPONSE TO XMS 
+2015-06-30 09:17:15,229 INFO c.d.x.Call [EventScannerThread] CREATING INFO RESPONSE TO XMS 
+2015-06-30 09:17:15,366 INFO c.d.x.Call [Thread-1] CREATE BYE REQUEST 
+2015-06-30 09:17:15,366 DEBUG c.d.x.Call [Thread-1] CREATE BYE REQUEST 
+BYE sip:toto@10.20.120.34 SIP/2.0
+Via: SIP/2.0/UDP 10.20.120.34:5070
+CSeq: 2 BYE
+From: <sip:Test@10.20.120.34>;tag=17cab90
+To: <sip:toto@10.20.120.34>;tag=18467
+Call-ID: f791372232503860bc4eeb9c279a8a94@10.20.120.34
+User-Agent: Linphone/3.5.2.032013 (eXosip2 /3.6.0)
+Max-Forwards: 70
+Content-Length: 0
+
+ 
+2015-06-30 09:17:15,367 INFO c.d.x.Call [Thread-1] CREATE BYE REQUEST 
+2015-06-30 09:17:15,367 DEBUG c.d.x.Call [Thread-1] CREATE BYE REQUEST 
+BYE sip:msml@146.152.64.141 SIP/2.0
+Via: SIP/2.0/UDP 10.20.120.34:5070
+CSeq: 3 BYE
+From: <sip:Test@10.20.120.34>;tag=17cab90
+To: <sip:msml@146.152.64.141>;tag=f18c5c00-8d409892-13c4-50022-5d4-4a0a6d5a-5d4
+Call-ID: d32b71e782723281a83fca2239b0de53@10.20.120.34
+Max-Forwards: 70
+Content-Length: 0
+
+ 
+2015-06-30 09:17:15,368 INFO c.d.x.Connector [EventScannerThread] HASHMAP SIZE: 1 
+2015-06-30 09:17:15,371 INFO c.d.x.Connector [EventScannerThread] HASHMAP SIZE: 0 
+2015-06-30 09:17:20,866 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:17:20,868 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:17:23,368 INFO c.d.x.Connector [EventScannerThread] Dialog Terminated 
+2015-06-30 09:17:23,370 INFO c.d.x.Connector [EventScannerThread] Dialog Terminated 
+2015-06-30 09:17:24,206 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 
+2015-06-30 09:17:24,917 INFO c.d.x.Connector [EventScannerThread] Transaction Terminated 

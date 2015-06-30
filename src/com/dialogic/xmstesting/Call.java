@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Random;
+import java.util.regex.Pattern;
 import javax.sip.ClientTransaction;
 import javax.sip.Dialog;
 import javax.sip.InvalidArgumentException;
@@ -338,6 +339,21 @@ public class Call extends Observable {
         }
     }
 
+    private void createConfAddInfoRequest(String msml) {
+        HeaderFactory headerFactory = sipConnector.getHeaderFactory();
+        try {
+            Request infoRequest = this.getDialog().createRequest(Request.INFO);
+            ContentTypeHeader contTypeHeader = headerFactory.createContentTypeHeader("application", "xml");
+            infoRequest.addHeader(contTypeHeader);
+
+            infoRequest.setContent(msml, contTypeHeader);
+            sipConnector.sendRequest(infoRequest, this);
+
+        } catch (SipException | ParseException ex) {
+            logger.fatal(ex.getMessage(), ex);
+        }
+    }
+
     public void createDialogEndRequest(String msml) {
         HeaderFactory headerFactory = sipConnector.getHeaderFactory();
         try {
@@ -608,6 +624,10 @@ public class Call extends Observable {
 
     public void sendInfo(String content) {
         createInfoRequest(content);
+    }
+
+    public void sendConfAddInfo(String content) {
+        createConfAddInfoRequest(content);
     }
 
     public void setCallId(String callId) {

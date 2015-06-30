@@ -12,7 +12,7 @@ public class XMSConferenceOptions {
 
     public String m_MaxParties = "9";
     public XMSMediaType m_MediaType = XMSMediaType.VIDEO;
-    public String m_Layout = "0"; //TODO need to change this to a Enum with meaningful values
+    public Layout m_Layout = Layout.AUTO; //TODO need to change this to a Enum with meaningful values
     public boolean m_CaptionEnabled = true;
     public String m_CaptionDuration = "20s";
     public boolean m_BeepEnabled = true;
@@ -27,7 +27,7 @@ public class XMSConferenceOptions {
     public void Reset() {
         m_MaxParties = "9";
         m_MediaType = XMSMediaType.VIDEO;
-        m_Layout = "0"; //TODO need to change this to a Enum with meaningful values
+        m_Layout = Layout.AUTO; //TODO need to change this to a Enum with meaningful values
         m_CaptionEnabled = true;
         String m_CaptionDuration = "20s";
         m_BeepEnabled = true;
@@ -45,9 +45,9 @@ public class XMSConferenceOptions {
         m_MediaType = a_type;
     }
 
-    public void SetLayout(int a_layout) {
+    public void SetLayout(Layout a_layout) {
         //TODO ENUM the layout for conferencing
-        m_Layout = "" + a_layout;
+        m_Layout = a_layout;
     }
 
     public void EnableCaption(boolean a_isenabled) {
