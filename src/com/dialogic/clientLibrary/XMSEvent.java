@@ -18,7 +18,7 @@ public class XMSEvent {
         m_object = a_obj;
         m_internalData = a_internal;
         m_data=a_data;
-        m_reason=a_reason;
+        m_reason = a_reason;
   //      m_duration="";
     }
     private XMSEventType m_evttype;

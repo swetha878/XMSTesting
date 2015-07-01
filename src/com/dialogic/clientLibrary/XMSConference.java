@@ -41,7 +41,7 @@ public abstract class XMSConference extends XMSObject {
      * CTor for the Object. Default takes no parms
      */
     public XMSConference() {
-        m_Name = "XMSConference:" + m_objectcounter;
+        m_Name = "XMSConference_" + m_objectcounter;
         PropertyConfigurator.configure("log4j.properties");
         //m_logger.setLevel(Level.ALL);
         m_logger.info("Creating " + m_Name);

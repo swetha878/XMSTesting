@@ -5,6 +5,7 @@
  */
 package com.dialogic.examples;
 
+import com.dialogic.clientLibrary.Layout;
 import com.dialogic.clientLibrary.XMSCall;
 import com.dialogic.clientLibrary.XMSConference;
 import com.dialogic.clientLibrary.XMSConnector;

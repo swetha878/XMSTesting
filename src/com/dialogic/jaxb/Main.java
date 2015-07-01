@@ -12,6 +12,7 @@
 //import com.dialogic.xms.msml.DialogLanguageDatatype;
 //import com.dialogic.xms.msml.ExitType;
 //import com.dialogic.xms.msml.Group;
+//import com.dialogic.xms.msml.IterateSendType;
 //import com.dialogic.xms.msml.Msml;
 //import com.dialogic.xms.msml.ObjectFactory;
 //import com.dialogic.xms.msml.Record;
@@ -41,29 +42,57 @@
 //        Msml msml = objectFactory.createMsml();
 //        msml.setVersion("1.1");
 //
-//        Msml.Join join = objectFactory.createMsmlJoin();
-//        join.setId2("conf:conf1");
-//        join.setId1("conn:1234");
-//        join.setMark("2");
+//        Msml.Dialogstart dialogstart = objectFactory.createMsmlDialogstart();
+//        dialogstart.setTarget("conn:1234");
+//        dialogstart.setType(DialogLanguageDatatype.APPLICATION_MOML_XML);
+//        dialogstart.setName("Collect");
 //
-//        StreamType streamType1 = objectFactory.createStreamType();
-//        streamType1.setMedia("audio");
+//        Collect collect = objectFactory.createCollect();
+//        collect.setFdt("10s");
 //
-//        StreamType streamType2 = objectFactory.createStreamType();
-//        streamType2.setMedia("video");
-//        streamType2.setDir("from-id1");
-//        streamType2.setDisplay("1");
+//        collect.setIdt("2s");
+//        collect.setStarttimer(BooleanDatatype.TRUE);
+//        collect.setCleardb(BooleanDatatype.TRUE);
+//        Collect.Pattern termDigPattern = objectFactory.createCollectPattern();
+//        termDigPattern.setDigits("#");
 //
-//        StreamType streamType3 = objectFactory.createStreamType();
-//        streamType3.setMedia("video");
-//        streamType3.setDir("to-id1");
+//        Send sendDigit = objectFactory.createSend();
+//        sendDigit.setTarget("source");
+//        sendDigit.setEvent("termKey");
+//        sendDigit.setNamelist("dtmf.digits dtmf.len dtmf.end");
+//        termDigPattern.getSend().add(sendDigit);
+//        collect.getPattern().add(termDigPattern);
 //
-//        join.getStream().add(streamType1);
-//        join.getStream().add(streamType2);
-//        join.getStream().add(streamType3);
+//        Collect.Pattern digitsPattern = objectFactory.createCollectPattern();
+//        digitsPattern.setDigits("xxxxx");
+//        collect.getPattern().add(digitsPattern);
 //
-//        msml.getMsmlRequest().add(join);
+//        IterateSendType noinput = objectFactory.createIterateSendType();
+//        Send sendNoInput = objectFactory.createSend();
+//        sendNoInput.setTarget("source");
+//        sendNoInput.setEvent("noinput");
+//        sendNoInput.setNamelist("dtmf.digits dtmf.len dtmf.end");
+//        noinput.getSend().add(sendNoInput);
+//        collect.setNoinput(noinput);
 //
+//        IterateSendType nomatch = objectFactory.createIterateSendType();
+//        Send sendNoMatch = objectFactory.createSend();
+//        sendNoMatch.setTarget("source");
+//        sendNoMatch.setEvent("nomatch");
+//        sendNoMatch.setNamelist("dtmf.digits dtmf.len dtmf.end");
+//        nomatch.getSend().add(sendNoInput);
+//        collect.setNomatch(nomatch);
+//
+//        Collect.Dtmfexit dtmfexit = objectFactory.createCollectDtmfexit();
+//        Send sendDtmf = objectFactory.createSend();
+//        sendNoMatch.setTarget("source");
+//        sendNoMatch.setEvent("dtmfexit");
+//        sendNoMatch.setNamelist("dtmf.digits dtmf.len dtmf.end");
+//        dtmfexit.getSend().add(sendDtmf);
+//        collect.setDtmfexit(dtmfexit);
+//
+//        dialogstart.getMomlRequest().add(objectFactory.createCollect(collect));
+//        msml.getMsmlRequest().add(dialogstart);
 //        try {
 //            JAXBContext jaxbContext = JAXBContext.newInstance(Msml.class);
 //            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
@@ -71,10 +100,9 @@
 //            jaxbMarshaller.marshal(msml, sw);
 //
 //        } catch (JAXBException ex) {
-//            java.util.logging.Logger.getLogger(Call.class
-//                    .getName()).log(Level.SEVERE, null, ex);
+//            java.util.logging.Logger.getLogger(Call.class.getName())
+//                    .log(Level.SEVERE, ex.getMessage(), ex);
 //        }
-//
-//        System.out.println("MSML JOIN -> " + sw.toString());
+//        System.out.println("MSML COLLECT DIGITS -> " + sw.toString());
 //    }
 //}

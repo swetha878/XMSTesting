@@ -444,6 +444,7 @@ public class MsmlCall extends XMSCall implements Observer {
                     xmsEvent.CreateEvent(XMSEventType.CALL_CUSTOM, this, "", "", info);
                     setLastEvent(xmsEvent);
                 } else if (mediaControl != null) {
+                    xmsEvent = new XMSEvent();
                     xmsEvent.CreateEvent(XMSEventType.CALL_INFO, this, "", "", info);
                     setLastEvent(xmsEvent);
 
@@ -495,9 +496,10 @@ public class MsmlCall extends XMSCall implements Observer {
                             }
                         }
                     } else if (eventName != null && eventName.equalsIgnoreCase("nomatch")
-                            || eventName != null && eventName.equalsIgnoreCase("dtmfexit")
                             || eventName != null && eventName.equalsIgnoreCase("termkey")
-                            || eventName != null && eventName.equalsIgnoreCase("noinput")) {
+                            || eventName != null && eventName.equalsIgnoreCase("noinput")
+                            || eventName != null && eventName.equalsIgnoreCase("dtmfexit")) {
+                        xmsEvent = new XMSEvent();
                         List<JAXBElement<String>> eventNameValueList = event.getNameAndValue();
                         Map<String, String> events = new HashMap<>();
                         for (int i = 0, n = eventNameValueList.size(); i < n; i += 2) {
@@ -510,8 +512,12 @@ public class MsmlCall extends XMSCall implements Observer {
                         String dtmfDigits = events.get("dtmf.digits");
                         String dtmfEnd = events.get("dtmf.end");
                         String dtmfLen = events.get("dtmf.len");
-                        xmsEvent.CreateEvent(XMSEventType.CALL_SENDDTMF_END, this, dtmfDigits, dtmfEnd, info);
-                        xmsEvent.setReason(dtmfEnd);
+                        xmsEvent.CreateEvent(XMSEventType.CALL_COLLECTDIGITS_END, this, dtmfEnd, dtmfDigits, info);
+                        if (dtmfDigits.equalsIgnoreCase("#")) {
+                            xmsEvent.setReason("term-digit");
+                        } else {
+                            xmsEvent.setReason(dtmfDigits);
+                        }
                         setLastEvent(xmsEvent);
 
                     } else if (eventName != null && eventName.equalsIgnoreCase("msml.dialog.exit")) {
@@ -830,13 +836,13 @@ public class MsmlCall extends XMSCall implements Observer {
 
         Collect.Dtmfexit dtmfexit = objectFactory.createCollectDtmfexit();
         Send sendDtmf = objectFactory.createSend();
-        sendNoMatch.setTarget("source");
-        sendNoMatch.setEvent("dtmfexit");
-        sendNoMatch.setNamelist("dtmf.digits dtmf.len dtmf.end");
+        sendDtmf.setTarget("source");
+        sendDtmf.setEvent("dtmfexit");
+        sendDtmf.setNamelist("dtmf.digits dtmf.len dtmf.end");
         dtmfexit.getSend().add(sendDtmf);
         collect.setDtmfexit(dtmfexit);
 
-        dialogstart.getMomlRequest().add(collect);
+        dialogstart.getMomlRequest().add(objectFactory.createCollect(collect));
         msml.getMsmlRequest().add(dialogstart);
         try {
             JAXBContext jaxbContext = JAXBContext.newInstance(Msml.class);
@@ -879,11 +885,6 @@ public class MsmlCall extends XMSCall implements Observer {
                 + "</group>\n"
                 + "</dialogstart>\n"
                 + "</msml>";
-        return msml;
-    }
-
-    private static String buildCollectDigit() {
-        String msml = "";
         return msml;
     }
 
