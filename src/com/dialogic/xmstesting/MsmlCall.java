@@ -405,6 +405,7 @@ public class MsmlCall extends XMSCall implements Observer {
                 }
             }
         } else if (e.getType().equals(EventType.INFORESPONSE)) {
+            if (e.getCall() == msmlSip) {
             String reponseMessage = new String(e.getRes().getRawContent());
             if (getState() == XMSCallState.CUSTOM) {
                 XMSEvent xmsEvent = new XMSEvent();
@@ -425,6 +426,9 @@ public class MsmlCall extends XMSCall implements Observer {
                         mediaStatusCode = Integer.parseInt(result.getResponse());
                     }
                 }
+                }
+            } else if (e.getCall() == caller) {
+
             }
         } else if (e.getType().equals(EventType.INFOREQUEST)) {
             if (!MakecallOptions.m_OKOnInfoEnabled) {
@@ -444,6 +448,9 @@ public class MsmlCall extends XMSCall implements Observer {
                     xmsEvent.CreateEvent(XMSEventType.CALL_CUSTOM, this, "", "", info);
                     setLastEvent(xmsEvent);
                 } else if (mediaControl != null) {
+                    if (caller != null) {
+                        caller.sendInfoWithoutConn(info);
+                    }
                     xmsEvent = new XMSEvent();
                     xmsEvent.CreateEvent(XMSEventType.CALL_INFO, this, "", "", info);
                     setLastEvent(xmsEvent);
@@ -511,12 +518,19 @@ public class MsmlCall extends XMSCall implements Observer {
                         }
                         String dtmfDigits = events.get("dtmf.digits");
                         String dtmfEnd = events.get("dtmf.end");
-                        String dtmfLen = events.get("dtmf.len");
-                        xmsEvent.CreateEvent(XMSEventType.CALL_COLLECTDIGITS_END, this, dtmfEnd, dtmfDigits, info);
-                        if (dtmfDigits.equalsIgnoreCase("#")) {
+                        String dtmfLen = events.get("dtmf.len");                
+                        if (dtmfDigits.contains(CollectDigitsOptions.m_terminateDigits)) {
+                            xmsEvent.CreateEvent(XMSEventType.CALL_COLLECTDIGITS_END, this,
+                                    dtmfDigits, "term-digit", info);
                             xmsEvent.setReason("term-digit");
+                        } else if (dtmfLen.equalsIgnoreCase(CollectDigitsOptions.m_maxDigits)) {
+                            xmsEvent.CreateEvent(XMSEventType.CALL_COLLECTDIGITS_END, this,
+                                    dtmfDigits, "max-digits", info);
+                            xmsEvent.setReason("max-digits");
                         } else {
-                            xmsEvent.setReason(dtmfDigits);
+                            xmsEvent.CreateEvent(XMSEventType.CALL_COLLECTDIGITS_END, this,
+                                    dtmfDigits, dtmfEnd, info);
+                            xmsEvent.setReason(dtmfEnd);
                         }
                         setLastEvent(xmsEvent);
 
@@ -815,7 +829,12 @@ public class MsmlCall extends XMSCall implements Observer {
         collect.getPattern().add(termDigPattern);
 
         Collect.Pattern digitsPattern = objectFactory.createCollectPattern();
-        digitsPattern.setDigits("xxxxx");
+        int length = Integer.parseInt(CollectDigitsOptions.m_maxDigits);
+        StringBuilder stringBuilder = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            stringBuilder.append("x");
+        }
+        digitsPattern.setDigits(stringBuilder.toString());
         collect.getPattern().add(digitsPattern);
 
         IterateSendType noinput = objectFactory.createIterateSendType();
@@ -831,7 +850,7 @@ public class MsmlCall extends XMSCall implements Observer {
         sendNoMatch.setTarget("source");
         sendNoMatch.setEvent("nomatch");
         sendNoMatch.setNamelist("dtmf.digits dtmf.len dtmf.end");
-        nomatch.getSend().add(sendNoInput);
+        nomatch.getSend().add(sendNoMatch);
         collect.setNomatch(nomatch);
 
         Collect.Dtmfexit dtmfexit = objectFactory.createCollectDtmfexit();
@@ -853,7 +872,7 @@ public class MsmlCall extends XMSCall implements Observer {
         } catch (JAXBException ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
         }
-        System.out.println("MSML COLLECT DIGITS -> " + sw.toString());
+        //System.out.println("MSML COLLECT DIGITS -> " + sw.toString());
         return sw.toString();
     }
 

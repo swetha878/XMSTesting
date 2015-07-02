@@ -66,7 +66,7 @@ public class XMSMsmlConference extends XMSConference implements Observer {
 
     public XMSMsmlConference() {
         m_type = "MSML";
-        m_Name = "XMSMsmlConference:" + m_objectcounter++;
+        m_Name = "XMSMsmlConference_" + m_objectcounter++;
 
         PropertyConfigurator.configure("log4j.properties");
         //m_logger.setLevel(Level.ALL);
@@ -76,7 +76,7 @@ public class XMSMsmlConference extends XMSConference implements Observer {
 
     public XMSMsmlConference(XMSConnector a_connector) {
         m_callIdentifier = null;
-        m_Name = "XMSConference:" + m_objectcounter++;
+        m_Name = "XMSConference_" + m_objectcounter++;
         PropertyConfigurator.configure("log4j.properties");
         //m_logger.setLevel(Level.ALL);
         m_logger.info("Creating " + m_Name);
@@ -114,7 +114,7 @@ public class XMSMsmlConference extends XMSConference implements Observer {
         MsmlCall msmlCall = (MsmlCall) call;
         try {
             if (msmlCall != null && msmlCall.msmlSip != null) {
-                //msmlCall.msmlSip.sendConfAddInfo(buildJoinConfVideoMsml(m_Name));
+                //msmlCall.msmlSip.sendInfoWithoutConn(buildJoinConfVideoMsml(m_Name));
                 msmlCall.msmlSip.sendInfo(buildJoinConfVideoMsml(m_Name));
                 counter++;
             }

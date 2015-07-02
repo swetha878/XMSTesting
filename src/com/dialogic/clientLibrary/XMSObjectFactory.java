@@ -4,6 +4,7 @@
  */
 package com.dialogic.clientLibrary;
 
+import com.dialogic.gui.SelectorForm;
 import com.dialogic.xmstesting.Connector;
 import com.dialogic.xmstesting.MsmlCall;
 import com.dialogic.xmstesting.XMSMsmlConference;
@@ -41,6 +42,8 @@ public class XMSObjectFactory {
 
     static private Logger logger = Logger.getLogger(XMSObjectFactory.class.getName());
     private String m_Name;
+    private final Object m_synclock = new Object();
+    static SelectorForm selector;
 
     /**
      * CTor for the XMSObjectFactory
@@ -50,6 +53,28 @@ public class XMSObjectFactory {
         PropertyConfigurator.configure("log4j.properties");
         //logger.setLevel(Level.ALL);
         logger.info("Creating " + m_Name);
+    }
+
+    public XMSConnector CreateConnector() {
+        try {
+            selector = new SelectorForm();
+            synchronized (m_synclock) {
+                while (selector.isVisible()) {
+                    m_synclock.wait();
+                }
+            }
+        } catch (InterruptedException ex) {
+            logger.error(ex);
+        }
+        XMSConnector connector = CreateConnector("SelectorConfiguration.xml");
+        return connector;
+    }
+
+    public void unblock() {
+        synchronized (m_synclock) {
+            selector.setVisible(false);
+            m_synclock.notify();
+        }
     }
 
     /**

@@ -339,7 +339,7 @@ public class Call extends Observable {
         }
     }
 
-    private void createConfAddInfoRequest(String msml) {
+    private void createInfoRequestWithoutConn(String msml) {
         HeaderFactory headerFactory = sipConnector.getHeaderFactory();
         try {
             Request infoRequest = this.getDialog().createRequest(Request.INFO);
@@ -626,8 +626,8 @@ public class Call extends Observable {
         createInfoRequest(content);
     }
 
-    public void sendConfAddInfo(String content) {
-        createConfAddInfoRequest(content);
+    public void sendInfoWithoutConn(String content) {
+        createInfoRequestWithoutConn(content);
     }
 
     public void setCallId(String callId) {

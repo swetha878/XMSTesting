@@ -49,7 +49,7 @@ public class XMSDigitDetect1 {
             if(myCall.getLastEvent().getReason().contains("max-digits")  ){
                 if(myCall.getLastEvent().getData().contentEquals("*")){
                     System.out.println("We have a star here.... do something fun");
-                    myCall.Play("verification/video_clip_nascar");
+                    myCall.Play("file://verification/video_clip_nascar");
                 } else {
                     System.out.println("Digit "+myCall.getLastEvent().getData()+" was detected");
                     continue;

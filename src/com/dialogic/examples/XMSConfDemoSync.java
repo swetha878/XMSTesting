@@ -32,6 +32,8 @@ public class XMSConfDemoSync {
 
             call1.WaitcallOptions.SetMediaType(XMSMediaType.VIDEO);
             call1.Waitcall();
+//            call1.PlayOptions.SetMediaType(XMSMediaType.VIDEO);
+//            call1.Play("file://verification/video_clip_newscast");
             myConf.Add(call1);
 
             call2.WaitcallOptions.SetMediaType(XMSMediaType.VIDEO);
