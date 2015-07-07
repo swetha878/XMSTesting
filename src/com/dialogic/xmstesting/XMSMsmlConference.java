@@ -174,13 +174,12 @@ public class XMSMsmlConference extends XMSConference implements Observer {
             Msml.Event event = msml.getEvent();
             String eventName = event.getName();
             if (eventName != null && eventName.equalsIgnoreCase("msml.conf.nomedia")) {
-                conf.sendInfo(buildDestroyConfMsml(m_Name));
+                //conf.sendInfo(buildDestroyConfMsml(m_Name));
                 conf.createBye();
                 XMSEvent xmsEvent = new XMSEvent();
                 xmsEvent.CreateEvent(XMSEventType.CALL_DISCONNECTED, this, "", "", info);
                 setLastEvent(xmsEvent);
             }
-
         } else if (e.getType().equals(EventType.DISCONNECTED)) {
             if (counter > 1) {
                 counter--;
@@ -267,22 +266,15 @@ public class XMSMsmlConference extends XMSConference implements Observer {
         createConf.setMark("1");
         createConf.setTerm(BooleanDatatype.TRUE);
 
-//
-//        if (ConferenceOptions.m_MediaType == XMSMediaType.AUDIO) {
-//            AudioMixType audiomix = objectFactory.createAudioMixType();
-//            audiomix.setId("mix1234");
-//            AudioMixType.NLoudest nLoudest = objectFactory.createAudioMixTypeNLoudest();
-//            nLoudest.setN(3);
-//            audiomix.setNLoudest(nLoudest);
-//            AudioMixType.Asn asn = objectFactory.createAudioMixTypeAsn();
-//            asn.setRi("10s");
-//            audiomix.setAsn(asn);
-//            createConf.setAudiomix(audiomix);
-//
-//        } else {
-//
-//            createConf.setVideolayout(videoLayout);
-//        }
+        VideoLayoutType videoLayout = objectFactory.createVideoLayoutType();
+
+        RootType rootType = objectFactory.createRootType();
+        rootType.setSize("VGA");
+        videoLayout.setRoot(rootType);
+
+        videoLayout.getRegion().add(buildRegion("1", "0", "0", "1"));
+        createConf.setVideolayout(videoLayout);
+
         msml.getMsmlRequest().add(createConf);
         try {
             JAXBContext jaxbContext = JAXBContext.newInstance(Msml.class);
@@ -355,14 +347,14 @@ public class XMSMsmlConference extends XMSConference implements Observer {
 //        int mark = 1;
 //        int display = 1;
         msml.getMsmlRequest().add(buildJoin("1234", name, Integer.toString(mark++), Integer.toString(display++)));
-                //        for (XMSCall c : m_partylist) {
-                //            if (c.WaitcallOptions.m_mediatype == XMSMediaType.VIDEO) {
-                //                MsmlCall msmlCall = (MsmlCall) c;
-                //                msml.getMsmlRequest().add(
-                //                        buildJoin(msmlCall.msmlSip.getRemoteTag(), name, Integer.toString(mark++),
-                //                                Integer.toString(display++)));
-                //            }
-                //        }
+        //        for (XMSCall c : m_partylist) {
+        //            if (c.WaitcallOptions.m_mediatype == XMSMediaType.VIDEO) {
+        //                MsmlCall msmlCall = (MsmlCall) c;
+        //                msml.getMsmlRequest().add(
+        //                        buildJoin(msmlCall.msmlSip.getRemoteTag(), name, Integer.toString(mark++),
+        //                                Integer.toString(display++)));
+        //            }
+        //        }
         try {
             JAXBContext jaxbContext = JAXBContext.newInstance(Msml.class);
             Marshaller jaxbMarshaller = jaxbContext.createMarshaller();

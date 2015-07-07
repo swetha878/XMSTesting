@@ -22,6 +22,7 @@ import javax.sip.SipException;
 import javax.sip.address.Address;
 import javax.sip.address.AddressFactory;
 import javax.sip.address.SipURI;
+import javax.sip.address.URI;
 import javax.sip.header.AllowHeader;
 import javax.sip.header.CSeqHeader;
 import javax.sip.header.CallIdHeader;
@@ -382,13 +383,22 @@ public class Call extends Observable {
         AddressFactory addressFactory = sipConnector.getAddressFactory();
         try {
             Response infoOkResponse = messageFactory.createResponse(Response.OK, request);
-            SipURI contactUri = addressFactory.createSipURI(this.getFromUser(), this.getFromAddress());
-            contactUri.setPort(sipConnector.sipProvider.getListeningPoint("udp").getPort());
-            Address contactAddress = addressFactory.createAddress(contactUri);
-            ContactHeader contactHeader = headerFactory.createContactHeader(contactAddress);
-            infoOkResponse.addHeader(contactHeader);
-            logger.info("CREATING INFO RESPONSE TO XMS");
-            sipConnector.sendResponse(infoOkResponse, this);
+            ContactHeader contactHeader = null;
+            if (this.getFromAddress() == null) {
+                if (request.getHeader(ContactHeader.NAME) != null) {
+                    contactHeader = ((ContactHeader) request.getHeader(ContactHeader.NAME));
+                }
+            } else {
+                SipURI contactUri = addressFactory.createSipURI(this.getFromUser(), this.getFromAddress());
+                contactUri.setPort(sipConnector.sipProvider.getListeningPoint("udp").getPort());
+                Address contactAddress = addressFactory.createAddress(contactUri);
+                contactHeader = headerFactory.createContactHeader(contactAddress);
+            }
+            if (contactHeader != null) {
+                infoOkResponse.addHeader(contactHeader);
+                logger.info("CREATING INFO RESPONSE TO XMS");
+                sipConnector.sendResponse(infoOkResponse, this);
+            }
         } catch (Exception ex) {
             logger.fatal(ex.getMessage(), ex);
         }
@@ -463,10 +473,26 @@ public class Call extends Observable {
 
         ToHeader toHeader = (ToHeader) request.getHeader("To");
         Address reqToAddress = toHeader.getAddress();
+        URI toURI = reqToAddress.getURI();
+        int port = 0;
+        if (toURI.isSipURI()) {
+            SipURI fromSipURI = (SipURI) toURI;
+            port = fromSipURI.getPort();
+        }
         try {
             Response okResponse = messageFactory.createResponse(Response.OK, this.getServerTransaction().getRequest());
-
-            Address contactAddress = addressFactory.createAddress(reqToAddress.toString());
+            Address contactAddress = null;
+            if (port <= 0) {
+                String reqToAddressString = reqToAddress.toString();
+                if (reqToAddressString.contains("<")) {
+                    reqToAddressString = reqToAddressString.replace("<", "");
+                    reqToAddressString = reqToAddressString.replace(">", "");
+                }
+                contactAddress = addressFactory.createAddress(reqToAddressString
+                        + ":" + sipConnector.sipProvider.getListeningPoint("udp").getPort());
+            } else {
+                contactAddress = addressFactory.createAddress(reqToAddress.toString());
+            }
             ContactHeader contactHeader = headerFactory.createContactHeader(contactAddress);
             okResponse.addHeader(contactHeader);
             MaxForwardsHeader maxForwardsHeader = headerFactory.createMaxForwardsHeader(70);

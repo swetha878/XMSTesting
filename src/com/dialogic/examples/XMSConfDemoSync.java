@@ -27,6 +27,13 @@ public class XMSConfDemoSync {
             XMSConnector myConnector = myFactory.CreateConnector("ConnectorConfig.xml");
             XMSCall call1 = myFactory.CreateCall(myConnector);
             XMSCall call2 = myFactory.CreateCall(myConnector);
+            XMSCall call3 = myFactory.CreateCall(myConnector);
+            XMSCall call4 = myFactory.CreateCall(myConnector);
+            XMSCall call5 = myFactory.CreateCall(myConnector);
+            XMSCall call6 = myFactory.CreateCall(myConnector);
+            XMSCall call7 = myFactory.CreateCall(myConnector);
+            XMSCall call8 = myFactory.CreateCall(myConnector);
+            XMSCall call9 = myFactory.CreateCall(myConnector);
 
             XMSConference myConf = myFactory.CreateConference(myConnector);
 
@@ -40,9 +47,44 @@ public class XMSConfDemoSync {
             call2.Waitcall();
             myConf.Add(call2);
 
+            call3.WaitcallOptions.SetMediaType(XMSMediaType.VIDEO);
+            call3.Waitcall();
+            myConf.Add(call3);
+
+            call4.WaitcallOptions.SetMediaType(XMSMediaType.VIDEO);
+            call4.Waitcall();
+            myConf.Add(call4);
+
+            call5.WaitcallOptions.SetMediaType(XMSMediaType.VIDEO);
+            call5.Waitcall();
+            myConf.Add(call5);
+
+            call6.WaitcallOptions.SetMediaType(XMSMediaType.VIDEO);
+            call6.Waitcall();
+            myConf.Add(call6);
+
+            call7.WaitcallOptions.SetMediaType(XMSMediaType.VIDEO);
+            call7.Waitcall();
+            myConf.Add(call7);
+
+            call8.WaitcallOptions.SetMediaType(XMSMediaType.VIDEO);
+            call8.Waitcall();
+            myConf.Add(call8);
+
+            call9.WaitcallOptions.SetMediaType(XMSMediaType.VIDEO);
+            call9.Waitcall();
+            myConf.Add(call9);
+
             Sleep(30000);
             call1.Dropcall();
             call2.Dropcall();
+            call3.Dropcall();
+            call4.Dropcall();
+            call5.Dropcall();
+            call6.Dropcall();
+            call7.Dropcall();
+            call8.Dropcall();
+            call9.Dropcall();
         } catch (Exception ex) {
             Logger.getLogger(XMSConfDemoSync.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }
